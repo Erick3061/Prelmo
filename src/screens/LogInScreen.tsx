@@ -5,6 +5,7 @@ import { Input } from '../components/Input/Input';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { Loading } from '../components/Loading';
 import { useMutation } from '@tanstack/react-query';
+import { setUser, updateFE, updateIsSave, updateIsSaveBiometry, updateKeychain } from '../features/appSlice';
 import { SocialNetworks } from '../components/SocialNetworks';
 import { Button } from '../components/Button';
 import Text from '../components/Text';
@@ -16,11 +17,10 @@ import { AlertContext } from '../components/Alert/AlertContext';
 import Animated, { BounceIn, FadeInDown } from 'react-native-reanimated';
 import TextInput from '../components/Input/TextInput';
 import { AxiosError, AxiosResponse } from 'axios';
-import { setUser } from '../features/appSlice';
+import { CheckBox } from '../components/CheckBox';
+import * as Keychain from 'react-native-keychain';
 import { IconButton } from '../components/IconButton';
 import keychain from 'react-native-keychain';
-import { LogIn } from '../api/Api';
-import { CheckBox } from '../components/CheckBox';
 
 type InputsLogIn = {
     email: string,
@@ -29,11 +29,11 @@ type InputsLogIn = {
 
 interface Props extends NativeStackScreenProps<rootStackScreen, 'LogInScreen'> { };
 export const LogInScreen = ({ navigation, route }: Props) => {
-    const { theme: { dark: isDark, colors }, insets } = useAppSelector(store => store.app);
+    const { theme: { dark: isDark, colors }, firstEntry, isCompatible, isSave, keychain: StateKeychain, isSaveWithBiometry, insets } = useAppSelector(store => store.app);
     const dispatchApp = useAppDispatch();
     const { control, handleSubmit, reset, setValue, getValues } = useForm<InputsLogIn>({ defaultValues: { email: '', password: '' } });
-    const { handleError } = useContext(HandleContext);
-    const { alert, type } = useContext(AlertContext);
+    const { handleError, domain, LogIn } = useContext(HandleContext);
+    const { notification } = useContext(AlertContext);
     const [getted, setGetted] = useState<InputsLogIn>();
     const [isChanged, setIsChanged] = useState<boolean>(false);
 
@@ -45,22 +45,22 @@ export const LogInScreen = ({ navigation, route }: Props) => {
             handleError(String(Response.data.message));
         },
         onSuccess: async data => {
-            // if (isCompatible) {
-            //     if ((isSave && isSaveWithBiometry) && !getted) {
-            //         await save(getValues('email'), getValues('password'), true);
-            //     }
-            //     if ((isSave && !isSaveWithBiometry) && !getted) {
-            //         await save(getValues('email'), getValues('password'), false);
-            //     }
-            // } else {
-            //     if (isSave && !getted) {
-            //         await save(getValues('email'), getValues('password'), false);
-            //     }
-            //     if (isSave && getted) {
-            //         //TODO verificar este caso....
-            //     }
-            // }
-            // dispatchApp(updateFE(false));
+            if (isCompatible) {
+                if ((isSave && isSaveWithBiometry) && !getted) {
+                    await save(getValues('email'), getValues('password'), true);
+                }
+                if ((isSave && !isSaveWithBiometry) && !getted) {
+                    await save(getValues('email'), getValues('password'), false);
+                }
+            } else {
+                if (isSave && !getted) {
+                    await save(getValues('email'), getValues('password'), false);
+                }
+                if (isSave && getted) {
+                    //TODO verificar este caso....
+                }
+            }
+            dispatchApp(updateFE(false));
             if (data.termsAndConditions) dispatchApp(setUser(data));
             else navigation.navigate('TCAP', { user: data });
         },
@@ -72,96 +72,99 @@ export const LogInScreen = ({ navigation, route }: Props) => {
 
     const nextInput = useRef<NativeTextInput>(null);
 
-    // const askSave = () => {
-    //     Alert.alert('Alerta', '¿Realmente quieres Recordar la contraseña?', [
-    //         {
-    //             text: 'cancelar'
-    //         },
-    //         { text: 'ok', onPress: () => dispatchApp(updateIsSave(true)) }
-    //     ], {
-    //         cancelable: true
-    //     });
-    // }
+    const askSave = () => {
+        Alert.alert('Alerta', '¿Realmente quieres Recordar la contraseña?', [
+            {
+                text: 'cancelar'
+            },
+            { text: 'ok', onPress: () => dispatchApp(updateIsSave(true)) }
+        ], {
+            cancelable: true
+        });
+    }
 
-    // const check = () => {
-    //     if (isCompatible) {
-    //         Alert.alert('Activar lector de biometría', '¿Desea activar el inicio de sesión con lectores biométricos? \n\nSiempre se puede cambiar esto en los ajustes de la aplicación', [
-    //             { text: 'no', onPress: () => askSave() },
-    //             {
-    //                 text: 'si', onPress: async () => {
-    //                     dispatchApp(updateIsSave(true));
-    //                     dispatchApp(updateIsSaveBiometry(true));
-    //                 }
-    //             }
-    //         ], { cancelable: true })
-    //     }
-    //     else {
-    //         askSave()
-    //     }
-    // }
+    const check = () => {
+        if (isCompatible) {
+            Alert.alert('Activar lector de biometría', '¿Desea activar el inicio de sesión con lectores biométricos? \n\nSiempre se puede cambiar esto en los ajustes de la aplicación', [
+                { text: 'no', onPress: () => askSave() },
+                {
+                    text: 'si', onPress: async () => {
+                        dispatchApp(updateIsSave(true));
+                        dispatchApp(updateIsSaveBiometry(true));
+                    }
+                }
+            ], { cancelable: true })
+        }
+        else {
+            askSave()
+        }
+    }
 
-    // const deleteCheck = async () => {
-    //     try {
-    //         await Keychain.resetGenericPassword({ service: 'LogIn_BIOMETRY' });
-    //         await Keychain.resetGenericPassword({ service: 'LogIn_DEVICE_PASSCODE' });
-    //         dispatchApp(updateKeychain(null));
-    //         setGetted(undefined);
-    //         reset();
-    //     } catch (error) { handleError(`${error}`) }
-    // }
+    const deleteCheck = async () => {
+        try {
+            await Keychain.resetGenericPassword({ service: 'LogIn_BIOMETRY' });
+            await Keychain.resetGenericPassword({ service: 'LogIn_DEVICE_PASSCODE' });
+            dispatchApp(updateKeychain(null));
+            setGetted(undefined);
+            reset();
+        } catch (error) { handleError(`${error}`) }
+    }
 
-    // const save = async (user: string, password: string, isBiometry: boolean) => {
-    //     try {
-    //         if (isBiometry) {
-    //             await Keychain.setGenericPassword(user, password, {
-    //                 accessControl: Keychain.ACCESS_CONTROL.DEVICE_PASSCODE,
-    //                 service: 'LogIn_DEVICE_PASSCODE'
-    //             });
-    //             await Keychain.setGenericPassword(user, password, {
-    //                 accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY,
-    //                 service: 'LogIn_BIOMETRY'
-    //             });
-    //         } else {
-    //             await Keychain.setGenericPassword(user, password, {
-    //                 accessControl: Keychain.ACCESS_CONTROL.DEVICE_PASSCODE,
-    //                 service: 'LogIn_DEVICE_PASSCODE'
-    //             });
-    //         }
-    //     } catch (error) {
-    //         handleError(`${error}`);
-    //     }
-    // }
+    const save = async (user: string, password: string, isBiometry: boolean) => {
+        try {
+            if (isBiometry) {
+                await Keychain.setGenericPassword(user, password, {
+                    accessControl: Keychain.ACCESS_CONTROL.DEVICE_PASSCODE,
+                    service: 'LogIn_DEVICE_PASSCODE'
+                });
+                await Keychain.setGenericPassword(user, password, {
+                    accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY,
+                    service: 'LogIn_BIOMETRY'
+                });
+            } else {
+                await Keychain.setGenericPassword(user, password, {
+                    accessControl: Keychain.ACCESS_CONTROL.DEVICE_PASSCODE,
+                    service: 'LogIn_DEVICE_PASSCODE'
+                });
+            }
+        } catch (error) {
+            handleError(`${error}`);
+        }
+    }
 
-    // const useBiometricos = async () => {
-    //     try {
-    //         const data = await keychain.getGenericPassword({ service: 'LogIn_BIOMETRY' });
-    //         if (data) onSubmit({ email: data.username, password: data.password });
-    //     } catch (error) {
-    //         handleError(`${error}`);
-    //     }
-    // }
+    const useBiometricos = async () => {
+        try {
+            const data = await keychain.getGenericPassword({ service: 'LogIn_BIOMETRY' });
+            if (data) onSubmit({ email: data.username, password: data.password });
+        } catch (error) {
+            notification({
+                type: 'warning',
+                text: `${error}`
+            });
+        }
+    }
 
-    // const setValues = async () => {
-    //     try {
-    //         const data = await keychain.getGenericPassword({ service: 'LogIn_DEVICE_PASSCODE' });
+    const setValues = async () => {
+        try {
+            const data = await keychain.getGenericPassword({ service: 'LogIn_DEVICE_PASSCODE' });
 
-    //         if (StateKeychain === 'BIOMETRY') {
-    //             if (data) {
-    //                 setGetted({ email: data.username, password: data.password });
-    //                 setValue('email', data.username);
-    //                 if (firstEntry) useBiometricos();
-    //             }
-    //         } else {
-    //             if (data) {
-    //                 setGetted({ email: data.username, password: data.password });
-    //                 setValue('email', data.username);
-    //                 if (firstEntry) onSubmit({ email: data.username, password: data.password });
-    //             }
-    //         }
-    //     } catch (error) {
-    //         handleError(`${error}`);
-    //     }
-    // }
+            if (StateKeychain === 'BIOMETRY') {
+                if (data) {
+                    setGetted({ email: data.username, password: data.password });
+                    setValue('email', data.username);
+                    if (firstEntry) useBiometricos();
+                }
+            } else {
+                if (data) {
+                    setGetted({ email: data.username, password: data.password });
+                    setValue('email', data.username);
+                    if (firstEntry) onSubmit({ email: data.username, password: data.password });
+                }
+            }
+        } catch (error) {
+            handleError(`${error}`);
+        }
+    }
 
     useLayoutEffect(() => {
         Platform.OS === 'ios'
@@ -216,7 +219,7 @@ export const LogInScreen = ({ navigation, route }: Props) => {
             routes: routes.slice(0),
             index: 0
         });
-        // setValues();
+        setValues();
     }, []);
 
     return (
@@ -232,7 +235,7 @@ export const LogInScreen = ({ navigation, route }: Props) => {
                             <Text style={{ textAlign: 'center', marginVertical: 5 }} variant='titleLarge'>Bienvenido</Text>
                             <Text style={{ textAlign: 'center', color: colors.outline, marginVertical: 5 }} variant='titleSmall'>Ingrese sus datos para iniciar sesión</Text>
                             <KeyboardAvoidingView style={[{ paddingVertical: 5 }]}>
-                                {/* <TextInput
+                                <TextInput
                                     iconLeft='server'
                                     placeholder='exammple.domain.com'
                                     label='Dirección del Servidor'
@@ -246,7 +249,7 @@ export const LogInScreen = ({ navigation, route }: Props) => {
                                         labelStyle={{ textTransform: 'capitalize', fontWeight: 'bold' }}
                                         onPress={(() => navigation.navigate('DomainScreen'))}
                                     />}
-                                /> */}
+                                />
                                 <Input
                                     editable={(!isLoading)}
                                     formInputs={control._defaultValues}
@@ -278,23 +281,22 @@ export const LogInScreen = ({ navigation, route }: Props) => {
                                     onSubmitEditing={handleSubmit(onSubmit)}
                                     returnKeyType='done'
                                     autoCapitalize='none'
-                                // onChange={async ({ nativeEvent: { text } }) => {
-                                //     if ((isCompatible && isSaveWithBiometry && getted) && text !== '') {
-                                //         setIsChanged(true);
-                                //     }
-                                //     if ((isCompatible && isSaveWithBiometry && getted) && text === '') {
-                                //         setIsChanged(false);
-                                //     }
-                                // }}
+                                    onChange={async ({ nativeEvent: { text } }) => {
+                                        if ((isCompatible && isSaveWithBiometry && getted) && text !== '') {
+                                            setIsChanged(true);
+                                        }
+                                        if ((isCompatible && isSaveWithBiometry && getted) && text === '') {
+                                            setIsChanged(false);
+                                        }
+                                    }}
                                 />
                             </KeyboardAvoidingView>
                             <CheckBox
                                 text='Recordar contraseña'
-                                // isChecked={isSave ? 'checked' : 'unchecked'}
-                                isChecked={'checked'}
-                            // onPress={() => (!isSave) ? check() : deleteCheck()}
+                                isChecked={isSave ? 'checked' : 'unchecked'}
+                                onPress={() => (!isSave) ? check() : deleteCheck()}
                             />
-                            {/* {
+                            {
                                 (isCompatible && isSaveWithBiometry && getted && !isChanged)
                                     ?
                                     <View style={{ alignItems: 'center' }}>
@@ -313,17 +315,17 @@ export const LogInScreen = ({ navigation, route }: Props) => {
                                         labelStyle={{ paddingVertical: 5, paddingHorizontal: 20 }}
                                         contentStyle={{ marginBottom: 15 }}
                                     />
-                            } */}
+                            }
                         </ScrollView>
                     </View>
                 </View>
 
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginVertical: 5 }}>
-                    {/* <TouchableOpacity
+                    <TouchableOpacity
                         onPress={() => navigation.navigate('PdfScreen', { name: 'Registro', url: `${domain}/docs/REGISTRO-PLATAFORMA.pdf` })}
                         disabled={isLoading} >
                         <Text variant='titleSmall' style={[{ textAlign: 'center', marginVertical: 10 }]}>Regístrate</Text>
-                    </TouchableOpacity> */}
+                    </TouchableOpacity>
 
                     <TouchableOpacity onPress={() => Alert.alert('Alerta', 'Contacta a tu titular para recuperar tu contraseña', [], { cancelable: true })}
                         disabled={isLoading} >

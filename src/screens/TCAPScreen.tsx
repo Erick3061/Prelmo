@@ -12,8 +12,7 @@ import { stylesApp } from '../App';
 import { useMutation } from '@tanstack/react-query';
 import { HandleContext } from '../context/HandleContext';
 import { setUser } from '../features/appSlice';
-import Animated, { BounceOut, FadeInUp, FlipInEasyY } from 'react-native-reanimated';
-import { AccepTerms } from '../api/Api';
+import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
 
 interface Props extends NativeStackScreenProps<rootStackScreen, 'TCAP'> { };
 export const TCAPScreen = ({ navigation, route: { params } }: Props) => {
@@ -21,7 +20,7 @@ export const TCAPScreen = ({ navigation, route: { params } }: Props) => {
     const backgroundColor: string = dark ? Color(colors.background).darken(.4).toString() : colors.background;
     const accept: boolean = false;
     const appDispatch = useAppDispatch();
-    const { handleError } = useContext(HandleContext);
+    const { handleError, AccepTerms } = useContext(HandleContext);
 
     const { mutate: mutateTerms } = useMutation(['Terms'], AccepTerms, {
         retry: 0,
@@ -33,9 +32,9 @@ export const TCAPScreen = ({ navigation, route: { params } }: Props) => {
     });
 
     return (
-        <Animated.View entering={FadeInUp} style={{ flex: 1 }}>
-            <SafeAreaView style={{ width: '100%', height: '100%', backgroundColor: colors.backdrop, justifyContent: 'center', alignItems: 'center' }}>
-                <Animated.View entering={FlipInEasyY} exiting={BounceOut} style={[
+        <Animated.View entering={SlideInDown} exiting={SlideOutDown} style={{ flex: 1 }}>
+            <SafeAreaView style={{ width: '100%', height: '100%', backgroundColor: Color(colors.primary).fade(.9).toString(), justifyContent: 'center', alignItems: 'center' }}>
+                <Animated.View style={[
                     {
                         position: 'absolute',
                         width: '95%',
@@ -58,9 +57,9 @@ export const TCAPScreen = ({ navigation, route: { params } }: Props) => {
                     </ScrollView>
                     <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingTop: 10 }}>
                         {
-                            params?.user && <Button text='Aceptar' mode='contained' contentStyle={{ backgroundColor: colors.success }} onPress={() => mutateTerms(params.user.token)} />
+                            params?.user && <Button text='Aceptar' mode='contained' contentStyle={{ backgroundColor: colors.success, marginHorizontal: 5 }} onPress={() => mutateTerms(params.user.token)} />
                         }
-                        <Button text='cancel' mode='contained' contentStyle={{ backgroundColor: colors.danger }} onPress={() => navigation.goBack()} />
+                        <Button text='cancel' mode='contained' contentStyle={{ backgroundColor: colors.danger, marginHorizontal: 5 }} onPress={() => navigation.goBack()} />
                     </View>
                 </Animated.View>
             </SafeAreaView>

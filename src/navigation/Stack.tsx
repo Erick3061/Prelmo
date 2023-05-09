@@ -1,7 +1,6 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React, { useContext } from 'react';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
-import { LogInScreen } from '../screens/LogInScreen';
 import { SplashScreen } from '../screens/SplashScreen';
 import { Drawer } from './Drawer';
 import { TCAPScreen } from '../screens/TCAPScreen';
@@ -14,20 +13,24 @@ import { TypeReport, typeAccount } from '../types/types';
 import { ResultAccountsScreen } from '../screens/ResultAccountsScreen';
 import { TableScreen } from '../screens/TableScreen';
 import { PdfScreen } from '../screens/PdfScreen';
-import { CheckAuth } from '../api/Api';
 import { useQuery } from '@tanstack/react-query';
 import { HandleContext } from '../context/HandleContext';
 import { setUser } from '../features/appSlice';
 import { Loading } from '../components/Loading';
+import { DomainScreen } from '../screens/DomainScreen';
+import { LogInScreen } from '../screens/LogInScreen';
+import { DownloadScreen } from '../screens/DownloadScreen';
 
 export type rootStackScreen = {
     SplashScreen: undefined;
+    DomainScreen: undefined;
     LogInScreen: undefined;
     Drawer: undefined;
     Search: { type: 'Account' | 'Accounts' | 'Groups' };
     TCAP: { user: User } | undefined;
     ChangePasswordScreen: undefined;
     DetailsInfoScreen: undefined;
+    DownloadScreen: undefined;
     ResultAccountScreen: {
         account: Account,
         start: string,
@@ -64,13 +67,13 @@ const Stack = createNativeStackNavigator<rootStackScreen>();
 
 export const StackScreens = () => {
     const { status: isAuth, User } = useAppSelector((state) => state.app);
-    const { handleError } = useContext(HandleContext);
+    const { handleError, CheckAuth } = useContext(HandleContext);
     const dispath = useAppDispatch();
 
     const { isFetching } = useQuery(['checkAuth'], () => CheckAuth(), {
         retry: 0,
         refetchInterval: 300000,
-        enabled: isAuth,
+        enabled: (isAuth === 'logued'),
         onError: error => handleError(String(error)),
         onSuccess: (resp) => dispath(setUser(resp))
     });
@@ -79,7 +82,7 @@ export const StackScreens = () => {
         <>
             <Stack.Navigator initialRouteName='SplashScreen'>
                 {
-                    isAuth
+                    (isAuth === 'logued')
                         ?
                         <Stack.Group key={"Private"}>
                             <Stack.Screen name='Drawer' component={Drawer} options={{ headerShown: false }} />
@@ -93,10 +96,12 @@ export const StackScreens = () => {
                         :
                         <Stack.Group screenOptions={{ headerShown: false }} key={"Public"}>
                             <Stack.Screen name='SplashScreen' component={SplashScreen} />
+                            <Stack.Screen name='DomainScreen' component={DomainScreen} options={{ orientation: 'portrait' }} />
                             <Stack.Screen name='LogInScreen' component={LogInScreen} />
                         </Stack.Group>
                 }
                 <Stack.Group key={"AllState"}>
+                    <Stack.Screen name='DownloadScreen' component={DownloadScreen} />
                     <Stack.Screen name='PdfScreen' component={PdfScreen} />
                 </Stack.Group>
                 <Stack.Group screenOptions={{ presentation: 'transparentModal' }}>

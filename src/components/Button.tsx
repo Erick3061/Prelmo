@@ -13,6 +13,7 @@ type ButtonMode = 'text' | 'outlined' | 'contained' | 'elevated' | 'contained-to
 export interface Props extends PressableProps {
     text: string;
     icon?: string;
+    isAfterIcon?: boolean;
     loading?: boolean;
     labelStyle?: StyleProp<TextStyle>;
     variantText?: keyof typeof TypescaleKey;
@@ -30,7 +31,7 @@ export interface Props extends PressableProps {
 export const Button = (props: Props) => {
     const { loading, labelStyle, contentStyle, mode = 'text', icon,
         text, uppercase = true, disabled, customButtonColor, customTextColor,
-        borderRadiusBtn, colorPressed, colorTextPressed, variantText, containerStyle } = props;
+        borderRadiusBtn, colorPressed, colorTextPressed, variantText, containerStyle, isAfterIcon = false } = props;
     const { color: customLabelColor, fontSize: customLabelSize } = StyleSheet.flatten(labelStyle) || {};
     const iconSize = 18;
     const { theme: { colors, fonts, roundness, dark } } = useAppSelector(state => state.app);
@@ -138,11 +139,10 @@ export const Button = (props: Props) => {
                 style={({ pressed }) => [
                     styles.button,
                     buttonStyle,
-                    isMode('elevated') && { ...stylesApp.shadow, backgroundColor: colors.background },
-                    pressed && { backgroundColor: colorPressed ?? Color(buttonStyle.backgroundColor).fade(.2).toString() },
-                    isMode('text') && pressed && {
-                        backgroundColor: Color(buttonStyle.backgroundColor).alpha(.1).toString()
-                    },
+                    isMode('elevated') && { ...stylesApp.shadow, shadowColor: colors.primary, backgroundColor: colors.background },
+                    (pressed && !isMode('contained')) && { backgroundColor: colorPressed ?? Color(buttonStyle.backgroundColor).fade(.2).toString() },
+                    (pressed && isMode('elevated')) && { backgroundColor: colorPressed ?? Color(colors.primaryContainer).toString() },
+                    (pressed && (isMode('text') || isMode('outlined'))) && { backgroundColor: Color(buttonStyle.backgroundColor).alpha(.1).toString() },
                     contentStyle,
                 ]}
                 onPressIn={(press) => {
@@ -159,9 +159,9 @@ export const Button = (props: Props) => {
                 }}
             >
                 {({ pressed }) => (
-                    <View style={[styles.content, containerStyle]}>
-                        {icon && loading !== true ? (
-                            <View style={styles.icon}>
+                    <View style={[styles.content, containerStyle, isAfterIcon && { flexDirection: 'row-reverse' }]}>
+                        {icon && !loading ? (
+                            <View style={isAfterIcon ? styles.iconAfter : styles.icon}>
                                 <Icon
                                     name={icon}
                                     size={customLabelSize ?? iconSize}
@@ -173,7 +173,7 @@ export const Button = (props: Props) => {
                             <ActivityIndicator
                                 size={customLabelSize ?? iconSize}
                                 color={typeof customLabelColor === 'string' ? customLabelColor : textColor}
-                                style={[styles.icon]}
+                                style={[isAfterIcon ? styles.iconAfter : styles.icon]}
                             />
                         ) : null}
                         <Text
@@ -208,6 +208,10 @@ const styles = StyleSheet.create({
     icon: {
         marginLeft: 12,
         marginRight: -4,
+    },
+    iconAfter: {
+        marginRight: 12,
+        marginLeft: -4,
     },
     label: {
         textAlign: 'center',

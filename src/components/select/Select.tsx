@@ -7,6 +7,7 @@ import { Orientation } from '../../interfaces/interfaces';
 import TextInput from '../Input/TextInput';
 import { ReciclerData } from '../ReciclerData';
 import Animated, { FadeInDown, ZoomInEasyDown, ZoomOutEasyDown } from 'react-native-reanimated';
+import Portal from '../Portal/Portal';
 
 interface Props<T> {
     valueField: keyof T;
@@ -16,7 +17,6 @@ interface Props<T> {
     onChange: (item: Array<T>) => void;
     value: string;
     label?: string;
-    animationType?: "slide" | "none" | "fade";
     maxHeight?: number;
 }
 
@@ -29,7 +29,6 @@ export const Select = <T extends Object>(props: Props<T>) => {
         value,
         label,
         itemsSelected,
-        animationType,
         maxHeight,
     } = props;
 
@@ -107,47 +106,44 @@ export const Select = <T extends Object>(props: Props<T>) => {
         let top: number | undefined = (maxHeight ?? 0) + (layout?.y ?? 0) + (layout?.height ?? 0);
         if (top === 0 || (screenHeight - (top + (maxHeight ?? 0)) < 100)) { top = undefined }
         return (
-            <Modal
-                transparent
-                animationType={animationType}
-                visible={visible}
-                supportedOrientations={['landscape', 'portrait']}
-            >
-                <SafeAreaView style={[modal.Modal, { backgroundColor: colors.backdrop }]}>
-                    <Pressable style={{ width: '100%', height: '100%' }} onPress={_close} />
-                    <Animated.View entering={ZoomInEasyDown.duration(200)} exiting={ZoomOutEasyDown.duration(200)} style={[
-                        modal.Container,
-                        {
-                            height: maxHeight ?? '100%',
-                            width: layout?.width ?? '90%',
-                            borderRadius: roundness * 2,
-                            backgroundColor: backgroundColor,
-                        },
-                        stylesApp.shadow, { elevation: 5, shadowColor: colors.primary },
-                        orientation === Orientation.landscape
-                            ?
+            <Portal>
+                {
+                    visible &&
+                    <SafeAreaView style={[modal.Modal, { backgroundColor: colors.backdrop }]}>
+                        <Pressable style={{ width: '100%', height: '100%' }} onPress={_close} />
+                        <Animated.View entering={ZoomInEasyDown.duration(200)} exiting={ZoomOutEasyDown.duration(200)} style={[
+                            modal.Container,
                             {
-                                position: 'absolute',
-                                bottom: insets ? insets.bottom : 0
-                            }
-                            : maxHeight ? {
-                                position: 'absolute',
-                                // top: (layout && ((layout.height * 2) + layout.y + maxHeight) + (Platform.OS === 'ios' ? insets ? insets.top - insets.bottom + 5 : 0 : 0)) ?? undefined
-                                top,
-                                bottom: top === undefined ? insets?.bottom ?? 0 : undefined
-                            } : {}
-                    ]}>
-                        <ReciclerData
-                            data={data}
-                            labelField={labelField}
-                            valueField={valueField}
-                            loading={false}
-                            onChange={(item) => onSelect([item])}
-                            selected={itemsSelected}
-                        />
-                    </Animated.View>
-                </SafeAreaView>
-            </Modal>
+                                height: maxHeight ?? '100%',
+                                width: layout?.width ?? '90%',
+                                borderRadius: roundness * 2,
+                                backgroundColor: backgroundColor,
+                            },
+                            stylesApp.shadow, { elevation: 5, shadowColor: colors.primary },
+                            orientation === Orientation.landscape
+                                ?
+                                {
+                                    position: 'absolute',
+                                    bottom: insets ? insets.bottom : 0
+                                }
+                                : maxHeight ? {
+                                    position: 'absolute',
+                                    top,
+                                    bottom: top === undefined ? insets?.bottom ?? 0 : undefined
+                                } : {}
+                        ]}>
+                            <ReciclerData
+                                data={data}
+                                labelField={labelField}
+                                valueField={valueField}
+                                loading={false}
+                                onChange={(item) => onSelect([item])}
+                                selected={itemsSelected}
+                            />
+                        </Animated.View>
+                    </SafeAreaView>
+                }
+            </Portal>
         )
     }, [visible, keyboardHeight, colors, dark, heightOption, maxHeight, insets, layout, orientation, backgroundColor, screenHeight]);
 

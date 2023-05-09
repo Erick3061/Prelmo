@@ -8,6 +8,7 @@ export interface PropsTI extends TextInputProps {
     iconRight?: string;
     iconLeft?: string;
     label?: string;
+    action?: React.ReactNode;
     containerStyle?: StyleProp<ViewStyle>;
     inputStyle?: StyleProp<TextStyle>;
     iconStyle?: StyleProp<TextStyle>;
@@ -19,7 +20,7 @@ export type Ref = NativeTextInput;
 
 
 const TextInput: React.ForwardRefRenderFunction<Ref, PropsTI> = (props: PropsTI, ref) => {
-    const { iconRight, iconLeft, secureTextEntry, label, containerStyle, inputStyle, iconStyle, onPress, onRightPress, onRef } = props;
+    const { iconRight, iconLeft, secureTextEntry, label, containerStyle, inputStyle, iconStyle, onPress, onRightPress, onRef, action } = props;
     const { theme: { colors, fonts } } = useAppSelector(state => state.app);
     const sizeIcon: number = 26;
     const [isPasswordVisible, setIsPasswordVisible] = useState<boolean>(true);
@@ -35,8 +36,7 @@ const TextInput: React.ForwardRefRenderFunction<Ref, PropsTI> = (props: PropsTI,
     React.useImperativeHandle(ref, () => ({ ...input.current }));
 
     const color: string = !isFocused ? colors.primary : Color(colors.primary).darken(.3).toString();
-
-    const _renderIcon = useCallback((name?: string) => {
+    const _renderIcon = useCallback((pos: 'left' | 'right', name?: string) => {
         if (name) {
             return (
                 <IconButton
@@ -146,7 +146,6 @@ const TextInput: React.ForwardRefRenderFunction<Ref, PropsTI> = (props: PropsTI,
         }
     }, [props.value, setText])
 
-
     const StartAnimate = () => {
         Animated.parallel([
             Animated.timing(translateXLabel, {
@@ -181,7 +180,7 @@ const TextInput: React.ForwardRefRenderFunction<Ref, PropsTI> = (props: PropsTI,
             ]}
             onPress={onPress}
         >
-            {_renderIcon(iconLeft)}
+            {_renderIcon('left', iconLeft)}
             <NativeTextInput
                 {...props}
                 onLayout={({ nativeEvent }) => setLayoutInput(nativeEvent.layout)}
@@ -202,8 +201,9 @@ const TextInput: React.ForwardRefRenderFunction<Ref, PropsTI> = (props: PropsTI,
                 placeholderTextColor={colors.outlineVariant}
             />
             {_renderLabel()}
-            {_renderIcon(iconRight)}
+            {_renderIcon('right', iconRight)}
             {_renderIconPass()}
+            {action}
         </Pressable>
     )
 }
@@ -218,14 +218,12 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         height: 50,
         position: 'relative',
-        // backgroundColor: 'pink'
     },
     input: {
         flex: 1,
         padding: 0,
         paddingHorizontal: 10,
         marginTop: 10,
-        // backgroundColor: 'blue'
     },
     icon: {
         marginHorizontal: 10

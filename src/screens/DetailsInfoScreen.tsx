@@ -1,5 +1,5 @@
+import React from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useState } from 'react';
 import { Image, TouchableOpacity, View } from 'react-native'
 import { useAppSelector } from '../app/hooks';
 import { SocialNetworks } from '../components/SocialNetworks';
@@ -8,30 +8,27 @@ import { rootStackScreen } from '../navigation/Stack';
 
 interface Props extends NativeStackScreenProps<rootStackScreen, 'DetailsInfoScreen'> { };
 export const DetailsInfoScreen = ({ navigation, route }: Props) => {
-    const { theme: { colors, fonts, dark } } = useAppSelector(state => state.app);
+    const { theme: { colors, dark } } = useAppSelector(state => state.app);
     return (
-        <View style={{ flex: 1, justifyContent: 'space-around' }}>
+        <View style={{ flex: 1, justifyContent: 'space-evenly', padding: 15 }}>
             <Image
                 style={[
-                    {
-                        width: '100%',
-                        height: 200,
-                        alignSelf: 'center',
-                        resizeMode: 'contain'
-                    },
+                    { resizeMode: 'contain', width: '70%', height: 100, alignSelf: 'center' },
                     dark && { tintColor: colors.onSurface }
                 ]}
-                source={require('../assets/logo2.png')}
+                source={require('../assets/prelmo.png')}
             />
-            <View style={{ paddingHorizontal: 25 }}>
-                <Text variant='titleSmall' style={[, { paddingVertical: 10, textAlign: 'center' }]}>Versión: 2.0.0</Text>
-                <Text variant='titleSmall' style={[, { paddingVertical: 10, }]}>© 2021-2023 Protección Electrónica Monterrey S.A. de C.V</Text>
-                <Text variant='titleSmall' style={[, { paddingVertical: 10, }]}>® Protección Electrónica Monterrey S.A. de C.V</Text>
-                <TouchableOpacity style={{ marginVertical: 15 }} onPress={() => navigation.navigate('TCAP')} >
-                    <Text variant='titleMedium' style={{ textAlign: 'center' }}>Términos y condiciones y aviso de privacidad</Text>
-                </TouchableOpacity>
+            <View>
+                <View style={{ paddingHorizontal: 25 }}>
+                    <Text variant='titleSmall' style={[, { paddingVertical: 10, textAlign: 'center' }]}>Versión: 1.0</Text>
+                    <Text variant='titleSmall' style={[, { paddingVertical: 10, }]}>© 2021-2023 Protección Electrónica Monterrey S.A. de C.V</Text>
+                    <Text variant='titleSmall' style={[, { paddingVertical: 10, }]}>® Protección Electrónica Monterrey S.A. de C.V</Text>
+                    <TouchableOpacity style={{ marginVertical: 15 }} onPress={() => navigation.navigate('TCAP')} >
+                        <Text variant='titleMedium' style={{ textAlign: 'center' }}>Términos y condiciones y aviso de privacidad</Text>
+                    </TouchableOpacity>
+                </View>
+                <SocialNetworks />
             </View>
-            <SocialNetworks />
         </View>
     )
 }

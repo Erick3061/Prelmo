@@ -28,7 +28,7 @@ export const Input = <T extends Object>(props: Props<T>) => {
                         onBlur={onBlur}
                         onRef={onRef}
                         value={value}
-                        containerStyle={{ marginVertical: 5 }}
+                        containerStyle={{ marginTop: 5 }}
                     />
                     {error && <Text style={{ color: colors.error }}>{error.message}</Text>}
                 </>

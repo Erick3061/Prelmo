@@ -1,12 +1,11 @@
 import { useIsFocused, useNavigation } from '@react-navigation/native';
-import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useLayoutEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
-import { View, KeyboardAvoidingView, TouchableOpacity, Pressable } from 'react-native';
+import { View, KeyboardAvoidingView, Pressable } from 'react-native';
 import { getKeys, modDate } from '../functions/functions';
 import { formatDate, Orientation } from '../interfaces/interfaces';
 import { Select } from '../components/select/Select';
 import { useAppSelector, useAppDispatch } from '../app/hooks';
-import Toast from 'react-native-toast-message';
 import { ScrollView } from 'react-native-gesture-handler';
 import { Calendar } from '../components/calendar/Calendar';
 import { TypeReport } from '../types/types';
@@ -16,7 +15,6 @@ import TextInput from '../components/Input/TextInput';
 import { DrawerScreenProps } from '@react-navigation/drawer';
 import { RootDrawerNavigator } from '../navigation/Drawer';
 import { updateAccounts } from '../features/appSlice';
-
 
 interface Accout {
     name: string;
@@ -39,6 +37,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { rootStackScreen } from '../navigation/Stack';
 import { Switch } from 'react-native';
 import Color from 'color';
+import { AlertContext } from '../components/Alert/AlertContext';
 
 type ResultAccountScreenProps = NativeStackNavigationProp<rootStackScreen, 'Drawer'>;
 
@@ -53,6 +52,7 @@ export const SelectAccountScreen = ({ navigation, route }: Props) => {
     const [isSelected, setIsSelected] = useState(false);
     const isFocus = useIsFocused();
     const dispatch = useAppDispatch();
+    const { notification } = useContext(AlertContext);
 
     useLayoutEffect(() => {
         navigation.setOptions({
@@ -73,7 +73,11 @@ export const SelectAccountScreen = ({ navigation, route }: Props) => {
                 const end = dates.find(f => f.name === 'Fecha final')?.date?.date.date ?? modDate({}).date.date;
                 stack.navigate('ResultAccountScreen', { account: accountsSelected[0], end, report: report[0].value, start, keys: getKeys(report[0].value), typeAccount: 1, filter: isSelected });
             } else {
-                Toast.show({ type: 'customError', text1: 'Error al asignar Fechas', text2: `Fechas faltantes:\n${missingDates}` })
+                notification({
+                    type: 'error',
+                    title: 'Error al asignar Fechas',
+                    text: `Fechas faltantes:\n${missingDates}`
+                });
             }
         }
     };
@@ -124,7 +128,6 @@ export const SelectAccountScreen = ({ navigation, route }: Props) => {
                         <>
                             <Select
                                 maxHeight={200}
-                                animationType='fade'
                                 valueField='value'
                                 labelField='name'
                                 value={value}
@@ -172,7 +175,10 @@ export const SelectAccountScreen = ({ navigation, route }: Props) => {
                             <Text variant='titleMedium' style={[{ textAlign: 'center' }]}>Recuerde que solo se puede consultar hasta 30 dias naturales</Text>
                             {_renderSelectAccount()}
                             {_renderSelectReport()}
-                            <Pressable onPress={() => setIsSelected(!isSelected)}>
+                            <Pressable
+                                onPress={() => setIsSelected(!isSelected)}
+                                android_ripple={{ color: Color(colors.primary).fade(.9).toString() }}
+                            >
                                 {
                                     ({ pressed }) => {
                                         return (

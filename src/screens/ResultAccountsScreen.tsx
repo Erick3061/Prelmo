@@ -2,15 +2,14 @@ import React, { useCallback, useContext, useEffect, useLayoutEffect, useRef, use
 import { View, ScrollView, Animated, ListRenderItemInfo, StyleSheet, Modal, Platform, Keyboard } from 'react-native';
 import { useAppSelector, useDebouncedValue, useReport } from '../app/hooks';
 import { Loading } from '../components/Loading';
-import { AP, CI, TypeReport } from '../types/types';
+import { AP, CI, MIMETypes, TypeReport, TypeReportDownload } from '../types/types';
 import { TargetPercentaje } from '../components/TargetPercentaje';
 import Color from 'color';
 import { Account, BatteryStatus, Orientation, percentaje, formatDate } from '../interfaces/interfaces';
 import { stylesApp } from '../App';
-import { getDay, getKeys, modDate } from '../functions/functions';
+import { getDay, modDate } from '../functions/functions';
 import TextInput from '../components/Input/TextInput';
 import { Icon, IconButton, IconMenu } from '../components/IconButton';
-import { Button } from '../components/Button';
 import { useQueryClient } from '@tanstack/react-query';
 import { HandleContext } from '../context/HandleContext';
 import Text from '../components/Text';
@@ -38,39 +37,37 @@ export const ResultAccountsScreen = ({ navigation, route: { params: { accounts, 
 
     const dates: { start: formatDate, end: formatDate } = { start: modDate({ days: -30 }), end: modDate({}) }
 
-    const { downloadReport } = useContext(HandleContext);
+    const { downloadReport, isDownloadDoc } = useContext(HandleContext);
 
     const backgroundColor: string = dark ? Color(colors.background).darken(.4).toString() : colors.background;
 
     const [textQueryValue, setTextQueryValue] = useState<string>('');
     const debaucedValue = useDebouncedValue(textQueryValue, 300);
 
-    const Download = ({ type, withGrap, name }: { withGrap?: boolean, type: 'pdf' | 'xlsx', name?: string }) => {
-        let endpoint: string = '', fileName: string = '';
+    const Download = ({ mime, withGrap, name }: { withGrap?: boolean, mime: MIMETypes, name?: string }) => {
+        let reportDownload: TypeReportDownload, fileName: string = '';
 
         switch (report) {
             case 'ap-ci':
-                endpoint = `ap-ci/${type}`;
-                fileName = `Apertura y cierre ${start} ${end} ${name}.${type}`;
+                reportDownload = 'ap-ci'
+                fileName = `APCI ${start} ${end} ${name} ${new Date().getTime()}`;
                 break;
             case 'event-alarm':
-                endpoint = `alarm/${type}`;
-                fileName = `Evento de alarma ${start} ${end} ${name}.${type}`;
+                reportDownload = 'alarm'
+                fileName = `EA ${start} ${end} ${name} ${new Date().getTime()}`;
                 break;
             case 'batery':
-                endpoint = `batery/${type}`;
-                fileName = `Estado de baterias ${name}.${type}`;
+                reportDownload = 'batery'
+                fileName = `EB ${name} ${new Date().getTime()}`;
                 break;
             case 'state':
-                endpoint = `state/${type}`;
-                fileName = `Estado de sucursales ${name}.${type}`;
+                reportDownload = 'state'
+                fileName = `ES ${name} ${new Date().getTime()}`;
                 break;
             case 'apci-week':
-                endpoint = `ap-ci-week/${type}`;
-                fileName = `Horarios de aperturas y cierres ${name}.${type}`;
+                reportDownload = 'ap-ci-week'
+                fileName = `HAPCI ${name} ${new Date().getTime()}`;
                 break;
-
-            default: break;
         }
 
         downloadReport({
@@ -81,8 +78,9 @@ export const ResultAccountsScreen = ({ navigation, route: { params: { accounts, 
                 dateStart: start,
                 dateEnd: end
             },
-            endpoint,
-            fileName
+            mime,
+            fileName,
+            report: reportDownload
         })
     }
 
@@ -103,35 +101,41 @@ export const ResultAccountsScreen = ({ navigation, route: { params: { accounts, 
             headerRight: (() =>
                 <IconMenu
                     ref={refModal}
-                    disabled={isLoading || isFetching}
+                    disabled={isLoading || isFetching || isDownloadDoc}
                     menu={[
                         {
                             text: 'Descargar pdf con gráfica',
-                            icon: 'document-outline',
+                            icon: 'download',
                             onPress: () => {
-                                Download({ type: 'pdf', withGrap: true, name: (data?.nombre) ? data.nombre : 'Grupo personalizado, cuentas individuales' })
+                                Download({ mime: MIMETypes.pdf, withGrap: true, name: (data?.nombre) ? data.nombre : 'Grupo personalizado, cuentas individuales' })
                             },
                             contentStyle: { ...styles.btnMenu }
                         },
                         {
                             text: 'Descargar pdf',
-                            icon: 'document-outline',
+                            icon: 'download',
                             onPress: () => {
-                                Download({ type: 'pdf', name: (data?.nombre) ? data.nombre : 'Grupo personalizado, cuentas individuales' })
+                                Download({ mime: MIMETypes.pdf, name: (data?.nombre) ? data.nombre : 'Grupo personalizado, cuentas individuales' })
                             },
                             contentStyle: { ...styles.btnMenu }
                         },
                         {
                             text: 'Descargar excel',
-                            icon: 'document-outline',
+                            icon: 'download',
                             onPress: () => {
-                                Download({ type: 'xlsx', name: (data?.nombre) ? data.nombre : 'Grupo personalizado, cuentas individuales' })
+                                Download({ mime: MIMETypes.xlsx, name: (data?.nombre) ? data.nombre : 'Grupo personalizado, cuentas individuales' })
                             },
                             contentStyle: { ...styles.btnMenu }
                         },
                         {
+                            text: 'Descargas',
+                            icon: 'cloud-download',
+                            onPress: () => { navigation.navigate('DownloadScreen') },
+                            contentStyle: { ...styles.btnMenu }
+                        },
+                        {
                             text: 'Recargar',
-                            icon: 'refresh-outline',
+                            icon: 'refresh',
                             onPress: () => refetch(),
                             contentStyle: { ...styles.btnMenu }
                         },
@@ -140,7 +144,7 @@ export const ResultAccountsScreen = ({ navigation, route: { params: { accounts, 
             ),
             headerLargeTitle: true,
         });
-    }, [navigation, isLoading, isFetching, data]);
+    }, [navigation, isLoading, isFetching, data, isDownloadDoc]);
 
     useEffect(() => {
         setFilterData(data);
@@ -444,6 +448,7 @@ export const ResultAccountsScreen = ({ navigation, route: { params: { accounts, 
         <>
             {_renderPercentajes()}
             <Text style={[{ borderLeftWidth: 3, borderColor: colors.primary, color: colors.text }, fonts.titleMedium]}>  {(data?.nombre) ? data.nombre : 'Grupo personalizado, cuentas individuales'}</Text>
+            <Loading refresh={isDownloadDoc} />
             {
                 (report === 'batery' || report === 'state')
                     ?

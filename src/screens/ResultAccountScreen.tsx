@@ -13,11 +13,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import Text from '../components/Text';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { rootStackScreen } from '../navigation/Stack';
-import { Alarm, AP, APCI, Bat, CI, filterEvents, otros, Prue } from '../types/types';
+import { Alarm, AP, APCI, Bat, CI, filterEvents, MIMETypes, otros, Prue } from '../types/types';
 import { RefreshControl } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { AlertContext } from '../components/Alert/AlertContext';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { ActivityIndicator } from 'react-native';
 
 
 interface Props extends NativeStackScreenProps<rootStackScreen, 'ResultAccountScreen'> { };
@@ -28,7 +29,7 @@ export const ResultAccountScreen = ({ navigation, route: { params: { account, en
     const { theme: { colors, fonts, roundness, dark }, orientation, screenWidth, screenHeight } = useAppSelector(state => state.app);
     const { data, isLoading, isFetching, refetch, error } = useReport({ accounts: [parseInt(account.CodigoCte)], dateStart: start, dateEnd: end, type: report, typeAccount, key: String(account.CodigoCte) });
     const queryClient = useQueryClient();
-    const { handleError, downloadReport } = useContext(HandleContext);
+    const { handleError, downloadReport, isDownloadDoc } = useContext(HandleContext);
     const { alert } = useContext(AlertContext);
     const [view, setView] = useState<'table' | 'default'>('table');
 
@@ -53,60 +54,73 @@ export const ResultAccountScreen = ({ navigation, route: { params: { account, en
 
     useLayoutEffect(() => {
         navigation.setOptions({
-            title: report === 'ap-ci' ? 'Apertura y cierre' : 'Evento de alarma',
+            title: isDownloadDoc ? 'Descargando documento...' : (report === 'ap-ci') ? 'Apertura y cierre' : 'Evento de alarma',
             headerLeft: (() =>
-                <IconButton
-                    style={{ paddingRight: 10 }}
-                    name={Platform.OS === 'ios' ? 'chevron-back-outline' : 'arrow-back-outline'}
-                    onPress={() => {
-                        queryClient.removeQueries({ queryKey: keyQuery })
-                        navigation.goBack();
-                    }}
-                />
+                isDownloadDoc
+                    ?
+                    <ActivityIndicator
+                        style={{ paddingRight: 10 }}
+                        color={colors.primary}
+                    />
+                    :
+                    <IconButton
+                        style={{ paddingRight: 10 }}
+                        name={Platform.OS === 'ios' ? 'chevron-back-outline' : 'arrow-back-outline'}
+                        onPress={() => {
+                            queryClient.removeQueries({ queryKey: keyQuery })
+                            navigation.goBack();
+                        }}
+                    />
             ),
             headerRight: (() =>
                 <IconMenu
                     ref={refModal}
-                    disabled={isLoading || isFetching}
+                    disabled={isLoading || isFetching || isDownloadDoc}
                     menu={[
                         {
                             text: 'Descargar pdf con gráfica',
-                            icon: 'document-outline',
+                            icon: 'download',
                             onPress: () => {
-                                Download({ type: 'pdf', withGrap: true });
+                                Download({ mime: MIMETypes.pdf, withGrap: true });
                             },
                             contentStyle: { ...styles.btnMenu }
                         },
                         {
                             text: 'Descargar pdf',
-                            icon: 'document-outline',
+                            icon: 'download',
                             onPress: () => {
-                                Download({ type: 'pdf' });
+                                Download({ mime: MIMETypes.pdf });
                             },
                             contentStyle: { ...styles.btnMenu }
                         },
                         {
                             text: 'Descargar excel',
-                            icon: 'document-outline',
+                            icon: 'download',
                             onPress: () => {
-                                Download({ type: 'xlsx' });
+                                Download({ mime: MIMETypes.xlsx });
                             },
                             contentStyle: { ...styles.btnMenu }
                         },
                         view === 'default' ? {
-                            text: 'ver tabla',
-                            icon: 'list-outline',
+                            text: 'ver como tabla',
+                            icon: 'list',
                             onPress: () => setView('table'),
                             contentStyle: { ...styles.btnMenu }
                         } : {
-                            text: 'ver lista',
-                            icon: 'list-outline',
+                            text: 'ver como lista',
+                            icon: 'list',
                             onPress: () => setView('default'),
                             contentStyle: { ...styles.btnMenu }
                         },
                         {
+                            text: 'Descargas',
+                            icon: 'cloud-download',
+                            onPress: () => { navigation.navigate('DownloadScreen') },
+                            contentStyle: { ...styles.btnMenu }
+                        },
+                        {
                             text: 'Recargar',
-                            icon: 'refresh-outline',
+                            icon: 'refresh',
                             onPress: () => refetch(),
                             contentStyle: { ...styles.btnMenu }
                         },
@@ -114,7 +128,7 @@ export const ResultAccountScreen = ({ navigation, route: { params: { account, en
                 />
             )
         });
-    }, [navigation, isLoading, isFetching, setView, view]);
+    }, [navigation, isLoading, isFetching, setView, view, isDownloadDoc]);
 
     const renderItem = useCallback(({ index, item, separators }: ListRenderItemInfo<Events>) => (
         <Animated.View entering={FadeIn} style={[styles.item, { borderRadius: roundness, backgroundColor: colors.background, shadowColor: colors.primary, alignSelf: 'center', width: orientation === Orientation.landscape ? screenWidth + 100 : ((screenWidth / 100) * 95), height: 80, }]}>
@@ -269,7 +283,7 @@ export const ResultAccountScreen = ({ navigation, route: { params: { account, en
         if (error) handleError(String(error));
     }, [error])
 
-    const Download = ({ type, withGrap }: { withGrap?: boolean, type: 'pdf' | 'xlsx' }) => {
+    const Download = ({ mime, withGrap }: { withGrap?: boolean, mime: MIMETypes }) => {
         downloadReport({
             data: {
                 accounts: [parseInt(account.CodigoCte)],
@@ -278,8 +292,9 @@ export const ResultAccountScreen = ({ navigation, route: { params: { account, en
                 dateStart: start,
                 dateEnd: end
             },
-            endpoint: `${(report === 'ap-ci') ? 'ap-ci' : 'alarm'}/${type}`,
-            fileName: `${(report === 'ap-ci') ? 'Apertura y cierre' : 'Evento de alarma'} ${start} ${end} ${account.Nombre}.${type}`
+            mime,
+            report: (report === 'ap-ci') ? report : 'alarm',
+            fileName: `${(report === 'ap-ci') ? 'APCI' : 'EA'} ${start} ${end} ${account.Nombre}${new Date().getTime()}`
         })
     }
 

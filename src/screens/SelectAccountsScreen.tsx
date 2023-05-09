@@ -1,5 +1,5 @@
 import { useIsFocused, useNavigation } from '@react-navigation/native';
-import React, { useCallback, useLayoutEffect, useState } from 'react';
+import React, { useCallback, useContext, useLayoutEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { View, KeyboardAvoidingView, Pressable, Switch } from 'react-native';
 import { getKeys, getKeysAccount, modDate } from '../functions/functions';
@@ -7,7 +7,6 @@ import { formatDate, Orientation } from '../interfaces/interfaces';
 import { useEffect } from 'react';
 import { Select } from '../components/select/Select';
 import { useAppSelector, useAppDispatch } from '../app/hooks';
-import Toast from 'react-native-toast-message';
 import { ScrollView } from 'react-native-gesture-handler';
 import { TypeReport } from '../types/types';
 import { Calendar } from '../components/calendar/Calendar';
@@ -22,7 +21,8 @@ import Text from '../components/Text';
 import { updateAccounts } from '../features/appSlice';
 import { DrawerScreenProps } from '@react-navigation/drawer';
 import { RootDrawerNavigator } from '../navigation/Drawer';
-import Animated, { SlideOutLeft, SlideOutRight } from 'react-native-reanimated';
+import Animated, { SlideOutLeft } from 'react-native-reanimated';
+import { AlertContext } from '../components/Alert/AlertContext';
 
 type Accout = {
     name: string;
@@ -57,6 +57,7 @@ export const SelectAccountsScreen = ({ navigation, route }: Props) => {
     const [hideCalendars, setHideCalendars] = useState<boolean>(false);
     const dispatch = useAppDispatch();
     const isFocus = useIsFocused();
+    const { notification } = useContext(AlertContext);
 
     useLayoutEffect(() => {
         navigation.setOptions({
@@ -85,7 +86,12 @@ export const SelectAccountsScreen = ({ navigation, route }: Props) => {
                     })
                 }
             } else {
-                Toast.show({ type: 'customError', text1: 'Error al asignar Fechas', text2: `Fechas faltantes:\n${missingDates}` })
+                notification({
+                    type: 'error',
+                    title: 'Error al asignar Fechas',
+                    text: `Fechas faltantes:\n${missingDates}`,
+                    autoClose: true,
+                });
             }
         }
     };
@@ -140,7 +146,6 @@ export const SelectAccountsScreen = ({ navigation, route }: Props) => {
                         <>
                             <Select
                                 maxHeight={200}
-                                animationType='fade'
                                 valueField='value'
                                 labelField='name'
                                 value={value}

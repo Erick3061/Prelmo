@@ -7,16 +7,14 @@ import { useAppSelector } from '../app/hooks';
 import { ScrollView } from 'react-native-gesture-handler';
 import { TypeReport } from '../types/types';
 import { Button } from '../components/Button';
-import { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
+import { NativeStackNavigationProp, } from '@react-navigation/native-stack';
 import { rootStackScreen } from '../navigation/Stack';
 import Text from '../components/Text';
 import TextInput from '../components/Input/TextInput';
-import { CommonActions, useIsFocused, useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { DrawerScreenProps } from '@react-navigation/drawer';
 import { RootDrawerNavigator } from '../navigation/Drawer';
 import { getKeysAccount } from '../functions/functions';
-
-type Stack = NativeStackScreenProps<rootStackScreen>;
 
 type Accout = {
     name: string;
@@ -108,7 +106,6 @@ export const SelectGroupsScreen = ({ navigation, route }: Props) => {
                         <>
                             <Select
                                 maxHeight={200}
-                                animationType='fade'
                                 valueField='value'
                                 labelField='name'
                                 value={value}

@@ -1,14 +1,13 @@
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { StyleSheet, TouchableOpacity, View, TouchableWithoutFeedback, TextInput as NativeTextInput, LayoutRectangle } from 'react-native';
 import { DataProvider, LayoutProvider, RecyclerListView } from 'recyclerlistview';
-import Toast from 'react-native-toast-message';
 import Color from 'color';
-import { HandleContext } from '../context/HandleContext';
 import { useAppSelector, useDebouncedValue } from '../app/hooks';
 import Text from './Text';
 import { Button } from './Button';
 import { Orientation } from '../interfaces/interfaces';
 import TextInput from './Input/TextInput';
+import { AlertContext } from './Alert/AlertContext';
 
 interface Props<T> {
     data: Array<T>;
@@ -39,7 +38,7 @@ export const List = <T extends Object>({ data, labelField, valueField, height, s
     const [filter, setFilter] = useState<Array<any>>(data);
     const [content, setContent] = useState<LayoutRectangle>();
     const { theme: { colors, roundness }, orientation, screenHeight, screenWidth } = useAppSelector(state => state.app);
-
+    const { notification } = useContext(AlertContext);
 
     const _onSelect = useCallback((item: T) => {
         if (!multiSelect) {
@@ -52,7 +51,12 @@ export const List = <T extends Object>({ data, labelField, valueField, height, s
                 if (selected.length < multiSelect.maxSelect) {
                     setSelected([...selected, item]);
                 } else {
-                    Toast.show({ text1: 'Alerta', text2: 'Solo se pueden seleccionar hasta 5 cuentas', type: 'info' })
+                    notification({
+                        type: 'info',
+                        autoClose: true,
+                        title: 'Alerta',
+                        text: 'Solo se pueden seleccionar hasta numCuentas cuentas'
+                    });
                 }
             }
         }
@@ -181,7 +185,6 @@ export const List = <T extends Object>({ data, labelField, valueField, height, s
                         />
                     }
                 </View>
-                <Toast />
             </View>
         </TouchableWithoutFeedback>
     )

@@ -12,19 +12,22 @@ import Color from 'color';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { logOut, updateTheme } from '../features/appSlice';
 import { CombinedDarkTheme, CombinedLightTheme } from '../config/theme/Theme';
-import { HomeScreen } from '../screens/HomeScreen';
 import { SelectAccountScreen } from '../screens/SelectAccountScreen';
 import { Orientation } from '../interfaces/interfaces';
 import { SelectGroupsScreen } from '../screens/SelectGroupsScreen';
 import { SelectAccountsScreen } from '../screens/SelectAccountsScreen';
 import { ChangePasswordScreen } from '../screens/ChangePasswordScreen';
 import { DetailsInfoScreen } from '../screens/DetailsInfoScreen';
+import { DownloadScreen } from '../screens/DownloadScreen';
+import { HomeScreen } from '../screens/HomeScreen';
+import ChangeThemeSlide from '../components/ChangeThemeSlide';
 
 export type RootDrawerNavigator = {
     HomeScreen: undefined;
     SelectAccountScreen: undefined;
     SelectGroupsScreen: undefined;
     ChangePasswordScreen: undefined;
+    DownloadScreen: undefined;
     DetailsInfoScreen: undefined;
     SelectAccountsScreen: undefined;
 }
@@ -46,10 +49,11 @@ export const Drawer = (props: Props) => {
         >
             <Menu.Screen name="HomeScreen" options={{ title: 'Inicio' }} component={HomeScreen} />
             <Menu.Screen name="SelectAccountScreen" options={{ title: 'Individual' }} component={SelectAccountScreen} />
+            <Menu.Screen name="DownloadScreen" options={{ title: 'Descargas' }} component={DownloadScreen} />
             <Menu.Screen name="SelectGroupsScreen" options={{ title: 'Grupal' }} component={SelectGroupsScreen} />
             <Menu.Screen name="SelectAccountsScreen" options={{ title: 'Avanzado' }} component={SelectAccountsScreen} />
             <Menu.Screen name="ChangePasswordScreen" options={{ title: 'Cambiar contraseña' }} component={ChangePasswordScreen} />
-            <Menu.Screen name="DetailsInfoScreen" options={{ title: 'PEMSA monitoreo APP' }} component={DetailsInfoScreen} />
+            <Menu.Screen name="DetailsInfoScreen" options={{ title: 'Detalles' }} component={DetailsInfoScreen} />
         </Menu.Navigator>
     )
 }
@@ -134,27 +138,57 @@ const MenuContent = ({ navigation, state }: DrawerContentComponentProps) => {
             </View>
             <DrawerContentScrollView>
                 <RenderItem
-                    active={routeNames[index] === 'HomeScreen' && true}
-                    icon="home-outline"
-                    label="INICIO"
+                    active={(routeNames[index] === 'HomeScreen') && true}
+                    icon={`home${routeNames[index] === 'HomeScreen' ? '' : '-outline'}`}
+                    label="Inicio"
                     onPress={() => navigation.navigate<keyof RootDrawerNavigator>("HomeScreen")}
                 />
 
                 <View style={{ paddingVertical: 5 }}>
                     <Text style={{ color: colors.primary, fontWeight: '600', marginLeft: 30 }}>Consultas</Text>
-                    <RenderItem active={routeNames[index] === 'SelectAccountScreen' && true} icon="document-outline" label="INDIVIDUAL" onPress={() => navigation.navigate<keyof RootDrawerNavigator>('SelectAccountScreen')} />
-                    <RenderItem active={routeNames[index] === 'SelectGroupsScreen' && true} icon="documents-outline" label="GRUPAL" onPress={() => navigation.navigate<keyof RootDrawerNavigator>('SelectGroupsScreen')} />
-                    <RenderItem active={routeNames[index] === 'SelectAccountsScreen' && true} icon="document-text-outline" label="AVANZADO" onPress={() => navigation.navigate<keyof RootDrawerNavigator>('SelectAccountsScreen')} />
+                    <RenderItem
+                        active={routeNames[index] === 'SelectAccountScreen' && true}
+                        icon={`document${routeNames[index] === 'SelectAccountScreen' ? '' : '-outline'}`}
+                        label="Individual"
+                        onPress={() => navigation.navigate<keyof RootDrawerNavigator>('SelectAccountScreen')}
+                    />
+                    <RenderItem
+                        active={routeNames[index] === 'SelectGroupsScreen' && true}
+                        icon={`documents${routeNames[index] === 'SelectGroupsScreen' ? '' : '-outline'}`}
+                        label="Grupal"
+                        onPress={() => navigation.navigate<keyof RootDrawerNavigator>('SelectGroupsScreen')}
+                    />
+                    <RenderItem
+                        active={routeNames[index] === 'SelectAccountsScreen' && true}
+                        icon={`document-text${routeNames[index] === 'SelectAccountsScreen' ? '' : '-outline'}`}
+                        label="Avanzado"
+                        onPress={() => navigation.navigate<keyof RootDrawerNavigator>('SelectAccountsScreen')}
+                    />
                 </View>
 
                 <View style={{ paddingVertical: 5 }}>
-                    <Text style={{ color: colors.primary, fontWeight: '600', marginLeft: 30 }}>Configuración</Text>
-                    <RenderItem active={routeNames[index] === 'ChangePasswordScreen' && true} icon="lock-closed-outline" label="CAMBIAR CONTRASEÑA" onPress={() => navigation.navigate<keyof RootDrawerNavigator>('ChangePasswordScreen')} />
-                    <RenderItem active={routeNames[index] === 'DetailsInfoScreen' && true} icon="help-outline" label="PEMSA monitoreo APP" onPress={() => navigation.navigate<keyof RootDrawerNavigator>('DetailsInfoScreen')} />
+                    <Text style={{ color: colors.primary, fontWeight: '600', marginLeft: 30 }}>Otros</Text>
+                    <RenderItem
+                        active={routeNames[index] === 'DownloadScreen' && true}
+                        icon={`cloud-download${routeNames[index] === 'DownloadScreen' ? '' : '-outline'}`}
+                        label="Descargas"
+                        onPress={() => navigation.navigate<keyof RootDrawerNavigator>('DownloadScreen')}
+                    />
+                    <RenderItem
+                        active={routeNames[index] === 'ChangePasswordScreen' && true}
+                        icon={`lock-closed${routeNames[index] === 'ChangePasswordScreen' ? '' : '-outline'}`}
+                        label="Cambiar contraseña"
+                        onPress={() => navigation.navigate<keyof RootDrawerNavigator>('ChangePasswordScreen')}
+                    />
+                    <RenderItem
+                        active={routeNames[index] === 'DetailsInfoScreen' && true}
+                        icon={`help${routeNames[index] === 'DetailsInfoScreen' ? '' : '-outline'}`}
+                        label="Acerca de Prelmo"
+                        onPress={() => navigation.navigate<keyof RootDrawerNavigator>('DetailsInfoScreen')}
+                    />
                 </View>
                 <View style={{ paddingVertical: 5 }}>
-                    <Text style={{ color: colors.primary, fontWeight: '600', marginLeft: 25 }}>Tema</Text>
-                    <View style={{ alignItems: 'center', marginVertical: 5, marginBottom: 10 }}>
+                    <View style={{ alignItems: 'center', marginVertical: 5, marginHorizontal: 10 }}>
                         <View style={[styles.containerST, { borderRadius: roundness * 3 }]}>
                             <Pressable
                                 style={[styles.containerOpT, { borderRadius: roundness * 3, borderColor: colors.primary }, (!dark) && { backgroundColor: colors.primary }]}

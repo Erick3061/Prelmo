@@ -1,16 +1,20 @@
 import React, { useContext } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { useAppSelector } from '../app/hooks';
-import { Button } from '../components/Button';
 import { SocialNetworks } from '../components/SocialNetworks';
 import Text from '../components/Text';
-import { HandleContext } from '../context/HandleContext';
 import { Orientation } from '../interfaces/interfaces';
-
-//https://arxiv.org/pdf/2111.09296.pdf
+import { AlertContext } from '../components/Alert/AlertContext';
+import { Button } from '../components/Button';
+import { HandleContext } from '../context/HandleContext';
+import { Loading } from '../components/Loading';
+import { MIMETypes } from '../types/types';
+import Slide from '../components/ChangeThemeSlide';
 
 export const HomeScreen = () => {
     const { theme: { fonts, colors, dark }, orientation } = useAppSelector(state => state.app);
+    const { notification } = useContext(AlertContext);
+    const { downloadReport, isDownloadDoc } = useContext(HandleContext);
     return (
         <View style={[
             { flex: 1, justifyContent: 'space-around' },
@@ -18,6 +22,7 @@ export const HomeScreen = () => {
                 flexDirection: 'row'
             }
         ]}>
+            <Loading refresh={isDownloadDoc} />
             <View style={[
                 { flex: 1, justifyContent: 'flex-end' },
                 orientation === Orientation.landscape && {
@@ -26,10 +31,10 @@ export const HomeScreen = () => {
             ]}>
                 <Image
                     style={[
-                        { resizeMode: 'contain', height: '50%', width: '100%' },
+                        { resizeMode: 'contain', width: '70%', height: 100, alignSelf: 'center' },
                         dark && { tintColor: colors.onSurface }
                     ]}
-                    source={require('../assets/logo2.png')}
+                    source={require('../assets/prelmo.png')}
                 />
             </View>
             <View style={[
