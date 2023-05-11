@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { LayoutRectangle, Pressable, RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { LayoutRectangle, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import { DataProvider, LayoutProvider, RecyclerListView } from 'recyclerlistview';
 import Text from './Text';
 import { useAppSelector } from '../app/hooks';
 import { Orientation } from '../interfaces/interfaces';
 import Color from 'color';
-import Animated, { FadeIn, SlideInLeft, SlideOutRight } from 'react-native-reanimated';
+import Animated, { SlideInLeft } from 'react-native-reanimated';
 
 interface Props<T> {
     data: Array<T>;

@@ -6,7 +6,6 @@ import { formatDate, Orientation } from '../../interfaces/interfaces';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAppSelector } from '../../app/hooks';
 import { CalendarProvider, CalendarContext } from '../../context/CalendarContext';
-import { HandleContext } from '../../context/HandleContext';
 import Text from '../Text';
 
 interface Props {

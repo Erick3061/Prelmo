@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "../app/store";
 import { CombinedLightTheme } from "../config/theme/Theme";
-import { KeychainType, ThemeBase, statusApp } from "../types/types";
+import { Saved, Service, ThemeBase, statusApp } from "../types/types";
 import { Theme } from "@react-navigation/native";
 import { Orientation, User, Account, Group, AppSlice } from '../interfaces/interfaces';
 import EncryptedStorage from 'react-native-encrypted-storage';
@@ -13,9 +13,7 @@ const initialState: AppSlice = {
     status: 'checking',
     firstEntry: true,
     isCompatible: null,
-    isSave: false,
-    isSaveWithBiometry: false,
-    keychain: null,
+    saved: null,
     theme: CombinedLightTheme,
     User: undefined,
     orientation: Orientation.portrait,
@@ -29,12 +27,12 @@ const initialState: AppSlice = {
 
 export const setUser = createAsyncThunk('LogIn', async (User: User) => {
     try {
-        await EncryptedStorage.setItem("token", User.token);
-        await EncryptedStorage.setItem("refreshToken", User.refreshToken);
+        await EncryptedStorage.setItem(Service["Encrypted-Token"], User.token);
+        await EncryptedStorage.setItem(Service["Encrypted-RefreshToken"], User.refreshToken);
         return User;
     } catch (error) {
-        await EncryptedStorage.removeItem("token");
-        await EncryptedStorage.removeItem("refreshToken");
+        await EncryptedStorage.removeItem(Service["Encrypted-Token"]);
+        await EncryptedStorage.removeItem(Service["Encrypted-RefreshToken"]);
 
         return undefined;
     }
@@ -42,8 +40,8 @@ export const setUser = createAsyncThunk('LogIn', async (User: User) => {
 
 export const logOut = createAsyncThunk('logOut', async () => {
     try {
-        await EncryptedStorage.removeItem("token");
-        await EncryptedStorage.removeItem("refreshToken");
+        await EncryptedStorage.removeItem(Service["Encrypted-Token"]);
+        await EncryptedStorage.removeItem(Service["Encrypted-RefreshToken"]);
     } catch (error) {
 
         return undefined;
@@ -79,34 +77,11 @@ export const appSlice = createSlice({
         updateFE: (state, action: PayloadAction<boolean>) => {
             state.firstEntry = action.payload;
         },
-        updateIsSave: (state, action: PayloadAction<boolean>) => {
-            state.isSave = action.payload;
-        },
-        updateIsSaveBiometry: (state, action: PayloadAction<boolean>) => {
-            state.isSaveWithBiometry = action.payload;
+        updateSaved: (state, action: PayloadAction<Saved>) => {
+            state.saved = action.payload;
         },
         updateisCompatible: (state, action: PayloadAction<keychain.BIOMETRY_TYPE | null>) => {
             state.isCompatible = action.payload;
-        },
-        updateKeychain: (state, action: PayloadAction<KeychainType>) => {
-            switch (action.payload) {
-                case 'BIOMETRY':
-                    state.isSave = true;
-                    state.isSaveWithBiometry = true;
-                    state.keychain = action.payload
-                    break;
-
-                case 'DEVICE_PASSCODE':
-                    state.isSave = true;
-                    state.isSaveWithBiometry = false;
-                    state.keychain = action.payload
-                    break;
-
-                default:
-                    state.isSave = false;
-                    state.isSaveWithBiometry = false;
-                    state.keychain = action.payload
-            }
         },
         updaetAccessStorage: (state, action: PayloadAction<boolean>) => {
             state.isAccessStorage = action.payload;
@@ -139,9 +114,7 @@ export const {
     updateGroups,
     updateState,
     updateFE,
-    updateIsSave,
-    updateIsSaveBiometry,
-    updateKeychain,
+    updateSaved,
     updateisCompatible,
     updaetAccessStorage
 } = appSlice.actions;

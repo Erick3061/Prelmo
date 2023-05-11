@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useReducer } from "react";
 import { ColorSchemeName, Dimensions, Platform, useColorScheme } from "react-native";
 import { Account, BatteryStatus, GetReport, Group, Orientation, Percentajes, UpdateUserProps, User } from '../interfaces/interfaces';
 import { useAppDispatch } from '../app/hooks';
-import { logOut, setInsets, updateTheme, setScreen, setOrientation, updateState, updateisCompatible, updateKeychain, updateFE, setUser } from '../features/appSlice';
+import { logOut, setInsets, updateTheme, setScreen, setOrientation, updateState, updateisCompatible, updateFE, setUser, updateSaved, updaetAccessStorage } from '../features/appSlice';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CombinedDarkTheme, CombinedLightTheme } from "../config/theme/Theme";
 import { EdgeInsets, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -10,9 +10,10 @@ import EncryptedStorage from 'react-native-encrypted-storage';
 import RNFS from 'react-native-fs';
 import axios, { AxiosError, AxiosInstance, AxiosResponse } from "axios";
 import keychain from 'react-native-keychain';
-import { AP, APCI, Alarm, Bat, CI, Prue, TypeReport, otros, MIMETypes, TypeReportDownload } from '../types/types';
+import { AP, APCI, Alarm, Bat, CI, Prue, TypeReport, otros, MIMETypes, TypeReportDownload, Service } from '../types/types';
 import { AlertContext } from "../components/Alert/AlertContext";
 import { Buffer } from 'buffer';
+import { check, checkMultiple, request, requestMultiple } from "react-native-permissions";
 
 interface DataDownload {
     accounts: Array<number>;
@@ -49,6 +50,7 @@ const initialState: State = {
 interface ContextProps extends State {
     handleError: (error: string) => void;
     downloadReport: (props: FuncDownload) => void;
+    checkPermissios: () => Promise<void>;
 
     LogIn: (props: { email: string; password: string; }) => Promise<User>;
     CheckAuth: () => Promise<User>;
@@ -87,15 +89,60 @@ export const HandleProvider = ({ children }: any) => {
     const insets: EdgeInsets = useSafeAreaInsets();
     const { notification } = useContext(AlertContext);
 
+    const checkPermissios = async () => {
+        if (Platform.OS === 'ios') {
+            if (await check('ios.permission.FACE_ID') !== 'granted') {
+                await request('ios.permission.FACE_ID');
+            }
+            appDispatch(updaetAccessStorage(true));
+        }
+        if (Platform.OS === 'android') {
+            if (Platform.constants.Version < 30) {
+                const req = await checkMultiple([
+                    'android.permission.READ_EXTERNAL_STORAGE',
+                    'android.permission.WRITE_EXTERNAL_STORAGE',
+                    'android.permission.READ_MEDIA_IMAGES',
+                    'android.permission.READ_MEDIA_VIDEO',
+                    'android.permission.READ_MEDIA_AUDIO'
+                ]);
+
+                if (req["android.permission.READ_EXTERNAL_STORAGE"] !== 'granted' || req["android.permission.WRITE_EXTERNAL_STORAGE"] !== 'granted') {
+                    const resp = await requestMultiple([
+                        'android.permission.READ_EXTERNAL_STORAGE',
+                        'android.permission.WRITE_EXTERNAL_STORAGE',
+                        'android.permission.READ_MEDIA_IMAGES',
+                        'android.permission.READ_MEDIA_VIDEO',
+                        'android.permission.READ_MEDIA_AUDIO'
+                    ]);
+                    if (resp["android.permission.READ_EXTERNAL_STORAGE"] === 'granted' && resp["android.permission.WRITE_EXTERNAL_STORAGE"] === 'granted') {
+                        appDispatch(updaetAccessStorage(true));
+                    } else {
+                        appDispatch(updaetAccessStorage(false));
+                        notification({
+                            type: 'warning',
+                            autoClose: false,
+                            title: 'Alerta',
+                            subtitle: 'Los permisos de la aplicación no fueron otorgados',
+                            text: JSON.stringify(resp, null, 3),
+                        })
+                    }
+                }
+            } else {
+                appDispatch(updaetAccessStorage(true));
+
+            }
+        }
+    }
+
     const setConfig = async () => {
         try {
             const isCompatible = await keychain.getSupportedBiometryType();
             appDispatch(updateisCompatible(isCompatible));
-            const data = await keychain.getAllGenericPasswordServices();
-            if (data.find(f => f.includes('LogIn_DEVICE_PASSCODE'))) appDispatch(updateKeychain('DEVICE_PASSCODE'));
-            if (data.find(f => f.includes('LogIn_BIOMETRY'))) appDispatch(updateKeychain('BIOMETRY'));
 
-            const domain: string = await EncryptedStorage.getItem('domainServerPrelmo') ?? '';
+            const saved = await EncryptedStorage.getItem(Service["Encrypted-Saved"]) ?? null;
+            (saved && saved === 'save' || saved === 'saveBiometry') ? appDispatch(updateSaved(saved)) : appDispatch(updateSaved(null));
+
+            const domain: string = await EncryptedStorage.getItem(Service["Encrypted-Domain"]) ?? '';
             dispatch({ type: 'updateDomain', payload: domain });
 
             const { width, height } = Dimensions.get('screen');
@@ -106,6 +153,8 @@ export const HandleProvider = ({ children }: any) => {
                 appDispatch(setOrientation(Orientation.landscape));
                 appDispatch(setScreen({ height: width, width: height }));
             }
+
+            await checkPermissios();
 
             if (domain !== '') {
                 autoLogIn();
@@ -121,14 +170,14 @@ export const HandleProvider = ({ children }: any) => {
     const getToken = async () => {
         try {
             let newToken: string | undefined = undefined;
-            const token: string = await EncryptedStorage.getItem('token') ?? '';
-            const refreshToken: string = await EncryptedStorage.getItem('refreshToken') ?? '';
+            const token: string = await EncryptedStorage.getItem(Service["Encrypted-Token"]) ?? '';
+            const refreshToken: string = await EncryptedStorage.getItem(Service["Encrypted-RefreshToken"]) ?? '';
             newToken = await axios.get('auth/check-auth', { baseURL: state.domain, headers: { Authorization: `Bearer ${refreshToken}` } })
                 .then(async resp => {
                     const data = resp.data as User;
                     try {
-                        await EncryptedStorage.setItem('token', data.token);
-                        await EncryptedStorage.setItem('refreshToken', data.refreshToken);
+                        await EncryptedStorage.setItem(Service["Encrypted-Token"], data.token);
+                        await EncryptedStorage.setItem(Service["Encrypted-RefreshToken"], data.refreshToken);
                         return data.token;
                     } catch { return undefined }
                 })
@@ -152,7 +201,7 @@ export const HandleProvider = ({ children }: any) => {
     }
 
     const autoLogIn = async () => {
-        await EncryptedStorage.getItem('token')
+        await EncryptedStorage.getItem(Service["Encrypted-Token"])
             .then(async token => {
                 if (!token) {
                     appDispatch(updateState('unlogued'));
@@ -187,7 +236,7 @@ export const HandleProvider = ({ children }: any) => {
 
     const updateDomain = async (domain: string) => {
         try {
-            await EncryptedStorage.setItem('domainServerPrelmo', domain);
+            await EncryptedStorage.setItem(Service["Encrypted-Domain"], domain);
             dispatch({ type: 'updateDomain', payload: domain });
         } catch (error) {
             handleError(`${error}`);
@@ -467,6 +516,7 @@ export const HandleProvider = ({ children }: any) => {
                 handleError,
                 downloadReport,
                 updateDomain,
+                checkPermissios,
 
                 LogIn,
                 AccepTerms,

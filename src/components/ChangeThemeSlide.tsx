@@ -4,7 +4,6 @@ import Animated, {
     Extrapolate,
     WithSpringConfig,
     interpolate,
-    useAnimatedGestureHandler,
     useAnimatedStyle,
     useSharedValue,
     withSpring

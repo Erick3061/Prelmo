@@ -6,7 +6,7 @@ import Color from 'color';
 import { stylesApp } from '../App';
 import Text from './Text';
 import { TypescaleKey } from '../types/types';
-import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 
 type ButtonMode = 'text' | 'outlined' | 'contained' | 'elevated' | 'contained-tonal';
 

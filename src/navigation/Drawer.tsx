@@ -20,7 +20,6 @@ import { ChangePasswordScreen } from '../screens/ChangePasswordScreen';
 import { DetailsInfoScreen } from '../screens/DetailsInfoScreen';
 import { DownloadScreen } from '../screens/DownloadScreen';
 import { HomeScreen } from '../screens/HomeScreen';
-import ChangeThemeSlide from '../components/ChangeThemeSlide';
 
 export type RootDrawerNavigator = {
     HomeScreen: undefined;

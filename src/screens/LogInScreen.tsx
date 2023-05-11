@@ -5,7 +5,7 @@ import { Input } from '../components/Input/Input';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { Loading } from '../components/Loading';
 import { useMutation } from '@tanstack/react-query';
-import { setUser, updateFE, updateIsSave, updateIsSaveBiometry, updateKeychain } from '../features/appSlice';
+import { setUser, updateFE, updateSaved } from '../features/appSlice';
 import { SocialNetworks } from '../components/SocialNetworks';
 import { Button } from '../components/Button';
 import Text from '../components/Text';
@@ -21,6 +21,8 @@ import { CheckBox } from '../components/CheckBox';
 import * as Keychain from 'react-native-keychain';
 import { IconButton } from '../components/IconButton';
 import keychain from 'react-native-keychain';
+import EncryptedStorage from 'react-native-encrypted-storage';
+import { Service } from '../types/types';
 
 type InputsLogIn = {
     email: string,
@@ -29,7 +31,7 @@ type InputsLogIn = {
 
 interface Props extends NativeStackScreenProps<rootStackScreen, 'LogInScreen'> { };
 export const LogInScreen = ({ navigation, route }: Props) => {
-    const { theme: { dark: isDark, colors }, firstEntry, isCompatible, isSave, keychain: StateKeychain, isSaveWithBiometry, insets } = useAppSelector(store => store.app);
+    const { theme: { dark: isDark, colors }, firstEntry, isCompatible, saved, insets } = useAppSelector(store => store.app);
     const dispatchApp = useAppDispatch();
     const { control, handleSubmit, reset, setValue, getValues } = useForm<InputsLogIn>({ defaultValues: { email: '', password: '' } });
     const { handleError, domain, LogIn } = useContext(HandleContext);
@@ -46,20 +48,18 @@ export const LogInScreen = ({ navigation, route }: Props) => {
         },
         onSuccess: async data => {
             if (isCompatible) {
-                if ((isSave && isSaveWithBiometry) && !getted) {
+                if (saved === 'saveBiometry') {
                     await save(getValues('email'), getValues('password'), true);
                 }
-                if ((isSave && !isSaveWithBiometry) && !getted) {
+                if (saved === 'save') {
                     await save(getValues('email'), getValues('password'), false);
                 }
             } else {
-                if (isSave && !getted) {
+                if (saved === 'save') {
                     await save(getValues('email'), getValues('password'), false);
                 }
-                if (isSave && getted) {
-                    //TODO verificar este caso....
-                }
             }
+            reset();
             dispatchApp(updateFE(false));
             if (data.termsAndConditions) dispatchApp(setUser(data));
             else navigation.navigate('TCAP', { user: data });
@@ -77,7 +77,7 @@ export const LogInScreen = ({ navigation, route }: Props) => {
             {
                 text: 'cancelar'
             },
-            { text: 'ok', onPress: () => dispatchApp(updateIsSave(true)) }
+            { text: 'ok', onPress: () => dispatchApp(updateSaved('save')) }
         ], {
             cancelable: true
         });
@@ -89,8 +89,7 @@ export const LogInScreen = ({ navigation, route }: Props) => {
                 { text: 'no', onPress: () => askSave() },
                 {
                     text: 'si', onPress: async () => {
-                        dispatchApp(updateIsSave(true));
-                        dispatchApp(updateIsSaveBiometry(true));
+                        dispatchApp(updateSaved('saveBiometry'));
                     }
                 }
             ], { cancelable: true })
@@ -102,9 +101,10 @@ export const LogInScreen = ({ navigation, route }: Props) => {
 
     const deleteCheck = async () => {
         try {
-            await Keychain.resetGenericPassword({ service: 'LogIn_BIOMETRY' });
-            await Keychain.resetGenericPassword({ service: 'LogIn_DEVICE_PASSCODE' });
-            dispatchApp(updateKeychain(null));
+            await Keychain.resetGenericPassword({ service: Service['Keychain-Saved'] });
+            await Keychain.resetGenericPassword({ service: Service['Keychain-Saved-Biometry'] });
+            await EncryptedStorage.removeItem(Service['Encrypted-Saved']);
+            dispatchApp(updateSaved(null));
             setGetted(undefined);
             reset();
         } catch (error) { handleError(`${error}`) }
@@ -112,20 +112,27 @@ export const LogInScreen = ({ navigation, route }: Props) => {
 
     const save = async (user: string, password: string, isBiometry: boolean) => {
         try {
+            saved && await EncryptedStorage.setItem(Service['Encrypted-Saved'], saved);
             if (isBiometry) {
-                await Keychain.setGenericPassword(user, password, {
-                    accessControl: Keychain.ACCESS_CONTROL.DEVICE_PASSCODE,
-                    service: 'LogIn_DEVICE_PASSCODE'
-                });
-                await Keychain.setGenericPassword(user, password, {
-                    accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY,
-                    service: 'LogIn_BIOMETRY'
-                });
+                if (!getted) {
+                    await Keychain.setGenericPassword(user, password, {
+                        service: Service['Keychain-Saved']
+                    });
+                    await Keychain.setGenericPassword(user, password, {
+                        accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY,
+                        service: Service['Keychain-Saved-Biometry']
+                    });
+                } else {//TODO : Verificar este paso  para la actualizacón de los datos
+
+                }
             } else {
-                await Keychain.setGenericPassword(user, password, {
-                    accessControl: Keychain.ACCESS_CONTROL.DEVICE_PASSCODE,
-                    service: 'LogIn_DEVICE_PASSCODE'
-                });
+                if (!getted) {
+                    await Keychain.setGenericPassword(user, password, {
+                        service: Service['Keychain-Saved']
+                    });
+                } else {//TODO : Verificar este paso  para la actualizacón de los datos
+
+                }
             }
         } catch (error) {
             handleError(`${error}`);
@@ -134,7 +141,7 @@ export const LogInScreen = ({ navigation, route }: Props) => {
 
     const useBiometricos = async () => {
         try {
-            const data = await keychain.getGenericPassword({ service: 'LogIn_BIOMETRY' });
+            const data = await keychain.getGenericPassword({ service: Service['Keychain-Saved-Biometry'] });
             if (data) onSubmit({ email: data.username, password: data.password });
         } catch (error) {
             notification({
@@ -146,20 +153,22 @@ export const LogInScreen = ({ navigation, route }: Props) => {
 
     const setValues = async () => {
         try {
-            const data = await keychain.getGenericPassword({ service: 'LogIn_DEVICE_PASSCODE' });
-
-            if (StateKeychain === 'BIOMETRY') {
-                if (data) {
-                    setGetted({ email: data.username, password: data.password });
-                    setValue('email', data.username);
-                    if (firstEntry) useBiometricos();
-                }
-            } else {
-                if (data) {
-                    setGetted({ email: data.username, password: data.password });
-                    setValue('email', data.username);
-                    if (firstEntry) onSubmit({ email: data.username, password: data.password });
-                }
+            const data = await keychain.getGenericPassword({ service: Service['Keychain-Saved'] });
+            switch (saved) {
+                case 'save':
+                    if (data) {
+                        setGetted({ email: data.username, password: data.password });
+                        setValue('email', data.username);
+                        if (firstEntry) onSubmit({ email: data.username, password: data.password });
+                    }
+                    break;
+                case 'saveBiometry':
+                    if (data) {
+                        setGetted({ email: data.username, password: data.password });
+                        setValue('email', data.username);
+                        if (firstEntry) useBiometricos();
+                    }
+                    break;
             }
         } catch (error) {
             handleError(`${error}`);
@@ -167,47 +176,24 @@ export const LogInScreen = ({ navigation, route }: Props) => {
     }
 
     useLayoutEffect(() => {
-        Platform.OS === 'ios'
-            ?
-            navigation.setOptions({
-                headerShown: true,
-                title: '',
-                headerLeft: (({ canGoBack, label, tintColor }) =>
-                    <View style={{ height: (insets?.top), width: 50 }}>
-                        <Image
-                            source={require('../assets/prelmo2.png')}
-                            style={[
-                                isDark && { tintColor: colors.onSurface },
-                                {
-                                    height: '100%',
-                                    width: '100%',
-                                    resizeMode: 'contain',
-                                }
-                            ]}
-                        />
-                    </View>
-                )
-            })
-            :
-            navigation.setOptions({
-                headerShown: true,
-                title: '',
-                headerLeft: (({ canGoBack, label, tintColor }) =>
-                    <Image
-                        source={require('../assets/prelmo2.png')}
-                        style={[
-                            isDark && { tintColor: colors.onSurface },
-                            {
-                                height: 30,
-                                width: 90,
-                                resizeMode: 'contain',
-                                alignSelf: 'flex-start',
-                            }
-                        ]}
-                    />
-                ),
-            });
-
+        navigation.setOptions({
+            headerShown: true,
+            title: '',
+            headerLeft: (({ canGoBack, label, tintColor }) =>
+                <Image
+                    source={require('../assets/prelmo2.png')}
+                    style={[
+                        isDark && { tintColor: colors.onSurface },
+                        {
+                            height: 30,
+                            width: 90,
+                            resizeMode: 'contain',
+                            alignSelf: 'flex-start',
+                        }
+                    ]}
+                />
+            ),
+        });
     }, [navigation, isDark, insets])
 
     useEffect(() => {
@@ -234,7 +220,10 @@ export const LogInScreen = ({ navigation, route }: Props) => {
                         <ScrollView>
                             <Text style={{ textAlign: 'center', marginVertical: 5 }} variant='titleLarge'>Bienvenido</Text>
                             <Text style={{ textAlign: 'center', color: colors.outline, marginVertical: 5 }} variant='titleSmall'>Ingrese sus datos para iniciar sesión</Text>
-                            <KeyboardAvoidingView style={[{ paddingVertical: 5 }]}>
+                            <KeyboardAvoidingView style={[{ paddingVertical: 5, flex: 1 }]}
+                                enabled
+                                behavior={Platform.OS === "ios" ? "padding" : undefined}
+                            >
                                 <TextInput
                                     iconLeft='server'
                                     placeholder='exammple.domain.com'
@@ -279,25 +268,25 @@ export const LogInScreen = ({ navigation, route }: Props) => {
                                     rules={{ required: { value: true, message: 'Campo requerido' } }}
                                     label='Contraseña'
                                     onSubmitEditing={handleSubmit(onSubmit)}
-                                    returnKeyType='done'
+                                    returnKeyType='next'
                                     autoCapitalize='none'
                                     onChange={async ({ nativeEvent: { text } }) => {
-                                        if ((isCompatible && isSaveWithBiometry && getted) && text !== '') {
+                                        if ((isCompatible && saved === 'saveBiometry' && getted) && text !== '') {
                                             setIsChanged(true);
                                         }
-                                        if ((isCompatible && isSaveWithBiometry && getted) && text === '') {
+                                        if ((isCompatible && saved === 'saveBiometry' && getted) && text === '') {
                                             setIsChanged(false);
                                         }
                                     }}
                                 />
+                                <CheckBox
+                                    text='Recordar contraseña'
+                                    isChecked={(saved !== null) ? 'checked' : 'unchecked'}
+                                    onPress={() => (saved === null) ? check() : deleteCheck()}
+                                />
                             </KeyboardAvoidingView>
-                            <CheckBox
-                                text='Recordar contraseña'
-                                isChecked={isSave ? 'checked' : 'unchecked'}
-                                onPress={() => (!isSave) ? check() : deleteCheck()}
-                            />
                             {
-                                (isCompatible && isSaveWithBiometry && getted && !isChanged)
+                                (isCompatible && saved === 'saveBiometry' && getted && !isChanged)
                                     ?
                                     <View style={{ alignItems: 'center' }}>
                                         <Animated.View entering={BounceIn} >

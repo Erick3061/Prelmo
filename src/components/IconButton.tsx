@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Pressable, PressableProps, View, StyleProp, ViewStyle, Modal, SafeAreaView } from 'react-native';
+import { Pressable, PressableProps, View, StyleProp, ViewStyle, SafeAreaView } from 'react-native';
 import IconVI from 'react-native-vector-icons/Ionicons';
 import Color from 'color';
 import { useAppSelector } from '../app/hooks';

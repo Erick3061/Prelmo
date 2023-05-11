@@ -74,7 +74,7 @@ export const AlertProvider = ({ children }: any) => {
     const notification = (props: PropsModal) => {
         dispatch({ type: 'showNot', payload: props });
         props.timeOut && dispatch({ type: 'updateTimeOut', payload: props.timeOut });
-        props.autoClose && dispatch({ type: 'updateAutoClose', payload: props.autoClose });
+        dispatch({ type: 'updateAutoClose', payload: props.autoClose ?? true });
     }
 
     const updateAutoClose = (close: boolean) => { dispatch({ type: 'updateAutoClose', payload: close }) }

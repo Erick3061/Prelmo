@@ -1,10 +1,9 @@
 import Color from 'color';
 import React, { useEffect } from 'react';
-import { ActivityIndicator, Platform, View } from 'react-native';
+import { ActivityIndicator, Platform } from 'react-native';
 import { useAppSelector } from '../app/hooks';
 import { stylesApp } from '../App';
 import Animated, { Extrapolation, FadeIn, FadeOut, interpolate, SlideInUp, SlideOutUp, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, interpolateColor, withSpring } from 'react-native-reanimated';
-import Text from './Text';
 
 export const Loading = ({ loading, refresh, right }: { loading?: boolean, refresh?: boolean, right?: number }) => {
     const { theme: { colors, roundness, dark }, insets } = useAppSelector(state => state.app);

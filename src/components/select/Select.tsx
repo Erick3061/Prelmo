@@ -1,12 +1,12 @@
-import React, { useCallback, useContext, useEffect, useRef, useState } from 'react'
-import { Keyboard, Modal, TextInput as NativeTextInput, TouchableWithoutFeedback, View, SafeAreaView, StyleSheet, StatusBar, Platform, LayoutRectangle, Pressable } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { Keyboard, TextInput as NativeTextInput, TouchableWithoutFeedback, View, SafeAreaView, StyleSheet, LayoutRectangle, Pressable } from 'react-native';
 import { useAppSelector } from '../../app/hooks';
 import { stylesApp } from '../../App';
 import Color from 'color';
 import { Orientation } from '../../interfaces/interfaces';
 import TextInput from '../Input/TextInput';
 import { ReciclerData } from '../ReciclerData';
-import Animated, { FadeInDown, ZoomInEasyDown, ZoomOutEasyDown } from 'react-native-reanimated';
+import Animated, { ZoomInEasyDown, ZoomOutEasyDown } from 'react-native-reanimated';
 import Portal from '../Portal/Portal';
 
 interface Props<T> {

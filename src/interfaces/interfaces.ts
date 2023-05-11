@@ -1,5 +1,5 @@
 import { GestureResponderEvent } from "react-native";
-import { KeychainType, statusApp, statusCheckBox, ThemeBase, typeAccount, TypeReport } from "../types/types";
+import { statusApp, statusCheckBox, ThemeBase, typeAccount, TypeReport, Saved } from "../types/types";
 import { Theme } from "@react-navigation/native";
 import { EdgeInsets } from "react-native-safe-area-context";
 import keychain from 'react-native-keychain';
@@ -8,9 +8,7 @@ export interface AppSlice {
     status: statusApp;
     firstEntry: boolean;
     isCompatible: keychain.BIOMETRY_TYPE | null;
-    isSave: boolean;
-    isSaveWithBiometry: boolean;
-    keychain: KeychainType;
+    saved: Saved;
     theme: ThemeBase & Theme;
     User?: User;
     orientation: Orientation;

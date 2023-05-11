@@ -77,44 +77,50 @@ export const DomainScreen = ({ navigation, route }: Props) => {
 
 
     return (
-        <Animated.View
-            entering={FadeInDown.delay(350).duration(400)}
-            style={[
-                style.container,
-                {
-                    alignItems: 'center',
-                    backgroundColor: colors.background,
-                    padding: 15
-                }
-            ]}>
+        <Animated.View entering={FadeInDown.delay(350).duration(400)} style={{ flex: 1 }}>
             <Loading refresh={isLoading} />
-            <Icon name='code-working' iconsize={45} />
-            <Text style={{ marginVertical: 15 }} variant='titleLarge'>¡Bienvenido!</Text>
-            <Text style={{ textAlign: 'center', marginHorizontal: 10, color: colors.outline }}>Para empezar a utilizar esta aplicación, proporcione la dirección del servidor de su central de alarmas</Text>
-            <KeyboardAvoidingView style={[{ padding: 10 }]}>
-                <Input
-                    formInputs={control._defaultValues}
-                    control={control}
-                    name={'domain'}
-                    iconLeft='server'
-                    placeholder='exammple.domain.com'
-                    keyboardType='url'
-                    rules={{
-                        required: { value: true, message: 'Campo requerido' },
-                    }}
-                    label='Dirección del Servidor'
-                    onSubmitEditing={handleSubmit(onSubmit)}
-                    returnKeyType='done'
-                    autoCapitalize='none'
-                />
+            <KeyboardAvoidingView style={[{ flex: 1 }]}
+                enabled
+                behavior={Platform.OS === "ios" ? "padding" : undefined}
+            >
+                <View
+                    style={[
+                        style.container,
+                        {
+                            alignItems: 'center',
+                            backgroundColor: colors.background,
+                            padding: 15
+                        }
+                    ]}
+                >
+                    <Icon name='code-working' iconsize={45} />
+                    <Text style={{ marginVertical: 15 }} variant='titleLarge'>¡Bienvenido!</Text>
+                    <Text style={{ textAlign: 'center', marginHorizontal: 10, color: colors.outline }}>Para empezar a utilizar esta aplicación, proporcione la dirección del servidor de su central de alarmas</Text>
+                    <Input
+                        formInputs={control._defaultValues}
+                        control={control}
+                        name={'domain'}
+                        iconLeft='server'
+                        placeholder='exammple.domain.com'
+                        keyboardType='url'
+                        rules={{
+                            required: { value: true, message: 'Campo requerido' },
+                        }}
+                        label='Dirección del Servidor'
+                        onSubmitEditing={handleSubmit(onSubmit)}
+                        returnKeyType='done'
+                        autoCapitalize='none'
+                    />
+                    <Button
+                        text='OK'
+                        mode='contained'
+                        onPress={handleSubmit(onSubmit)}
+                        contentStyle={{ marginVertical: 15 }}
+                        disabled={isLoading}
+                    />
+                </View>
             </KeyboardAvoidingView>
-            <Button
-                text='OK'
-                mode='contained'
-                onPress={handleSubmit(onSubmit)}
-                contentStyle={{ marginVertical: 15 }}
-                disabled={isLoading}
-            />
         </Animated.View>
     )
+
 }

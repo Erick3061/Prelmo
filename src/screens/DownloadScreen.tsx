@@ -32,9 +32,11 @@ export const DownloadScreen = ({ navigation }: Props) => {
             setIsLoading(true);
             const readed = await RNFS.readDir(directory);
             setFiles(readed.reverse());
-            setIsLoading(false);
         } catch (error) {
             handleError(String(error))
+        }
+        finally {
+            setIsLoading(false);
         }
     }
 
@@ -100,7 +102,7 @@ export const DownloadScreen = ({ navigation }: Props) => {
                                     text: 'Actualizar',
                                     icon: 'refresh',
                                     onPress() {
-                                        Read();
+                                        isAccessStorage && Read();
                                     },
                                     contentStyle: { ...styles.btnMenu }
                                 },
@@ -113,12 +115,15 @@ export const DownloadScreen = ({ navigation }: Props) => {
     }, [navigation]);
 
     useEffect(() => {
-        Read();
+        isAccessStorage && Read();
     }, [focus]);
+
+    // uses
 
     return (
         <View style={{ flex: 1, padding: 5 }}>
             <Loading refresh={isLoading} />
+            <Text variant='labelMedium'>{directory}</Text>
             <FlatList
                 data={files}
                 ItemSeparatorComponent={() => <View style={[{ backgroundColor: colors.border, height: StyleSheet.hairlineWidth, }]} />}
@@ -158,7 +163,7 @@ export const DownloadScreen = ({ navigation }: Props) => {
                     </SafeAreaView>
                 }
             </Portal>
-        </View>
+        </View >
     )
 };
 

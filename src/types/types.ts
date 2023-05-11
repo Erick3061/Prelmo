@@ -1,6 +1,6 @@
 import { Events } from "../interfaces/interfaces";
 
-export type KeychainType = 'BIOMETRY' | 'DEVICE_PASSCODE' | null;
+export type Saved = 'save' | 'saveBiometry' | null;
 export type statusApp = 'checking' | 'unlogued' | 'logued';
 export type TypeReport = 'ap-ci' | 'event-alarm' | 'batery' | 'state' | 'apci-week';
 export type TypeReportDownload = 'ap-ci' | 'alarm' | 'batery' | 'state' | 'ap-ci-week';
@@ -8,6 +8,14 @@ export type typeAccount = number;
 export type HeaderTableValues = Array<{ title: string, keys?: Array<keyof Events>, size?: number, center?: boolean }>;
 export type statusCheckBox = 'checked' | 'unchecked';
 
+export enum Service {
+    'Keychain-Saved' = 'LogIn-Prelmo-Saved',
+    'Keychain-Saved-Biometry' = 'LogIn-Prelmo-Saved-Biometry',
+    'Encrypted-Domain' = 'Prelmo-Domain',
+    'Encrypted-Saved' = 'Prelmo-Saved',
+    'Encrypted-Token' = 'Prelmo-Token',
+    'Encrypted-RefreshToken' = 'Prelmo-Refresh-Token',
+}
 export enum MIMETypes {
     'pdf' = 'application/pdf',
     'xlsx' = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

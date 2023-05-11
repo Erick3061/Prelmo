@@ -4,17 +4,9 @@ import { useAppSelector } from '../app/hooks';
 import { SocialNetworks } from '../components/SocialNetworks';
 import Text from '../components/Text';
 import { Orientation } from '../interfaces/interfaces';
-import { AlertContext } from '../components/Alert/AlertContext';
-import { Button } from '../components/Button';
-import { HandleContext } from '../context/HandleContext';
-import { Loading } from '../components/Loading';
-import { MIMETypes } from '../types/types';
-import Slide from '../components/ChangeThemeSlide';
 
 export const HomeScreen = () => {
     const { theme: { fonts, colors, dark }, orientation } = useAppSelector(state => state.app);
-    const { notification } = useContext(AlertContext);
-    const { downloadReport, isDownloadDoc } = useContext(HandleContext);
     return (
         <View style={[
             { flex: 1, justifyContent: 'space-around' },
@@ -22,7 +14,6 @@ export const HomeScreen = () => {
                 flexDirection: 'row'
             }
         ]}>
-            <Loading refresh={isDownloadDoc} />
             <View style={[
                 { flex: 1, justifyContent: 'flex-end' },
                 orientation === Orientation.landscape && {

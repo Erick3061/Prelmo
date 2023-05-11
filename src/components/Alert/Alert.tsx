@@ -1,5 +1,5 @@
 import React, { useContext, useEffect } from 'react';
-import Animated, { BounceIn, BounceOut, FadeIn, FadeOut, LightSpeedInRight, LightSpeedOutRight, SlideOutRight, StretchInX, runOnJS, useAnimatedGestureHandler, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { BounceIn, BounceOut, FadeIn, FadeOut, LightSpeedInRight, SlideOutRight, StretchInX, runOnJS, useAnimatedGestureHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AlertContext } from './AlertContext';
@@ -9,7 +9,7 @@ import { Icon, IconButton } from '../IconButton';
 import Text from '../Text';
 import Color from 'color';
 import Portal from '../Portal/Portal';
-import { GestureHandlerRootView, PanGestureHandler } from 'react-native-gesture-handler';
+import { PanGestureHandler } from 'react-native-gesture-handler';
 
 export const Alert = () => {
     const { show, type, contentModal, clear, closeAlert, closeNot, autoClose, timeOut, updateAutoClose } = useContext(AlertContext);
@@ -147,6 +147,7 @@ export const Alert = () => {
                                             {contentModal.subtitle && <Text variant='titleSmall'>{contentModal.subtitle}</Text>}
                                             {contentModal.text && <Text variant='labelSmall'>{contentModal.text}</Text>}
                                         </View>
+                                        {contentModal.btnQuestion && contentModal.btnQuestion}
                                         <IconButton name='close' style={{ position: 'absolute', right: 5, top: 5 }} onPress={closeNot} />
                                     </Pressable>
                                 </Animated.View>

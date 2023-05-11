@@ -5,10 +5,14 @@
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",
+    "postinstall": "react-native setup-ios-permissions",
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest"
   },
+  "reactNativePermissionsIOS": [
+    "FaceID"
+  ],
   "dependencies": {
     "@react-native-community/datetimepicker": "^7.0.1",
     "@react-navigation/bottom-tabs": "^6.5.7",
