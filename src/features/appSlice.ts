@@ -22,7 +22,6 @@ const initialState: AppSlice = {
     insets: undefined,
     accountsSelected: [],
     groupsSelected: [],
-    isAccessStorage: false,
 };
 
 export const setUser = createAsyncThunk('LogIn', async (User: User) => {
@@ -83,9 +82,6 @@ export const appSlice = createSlice({
         updateisCompatible: (state, action: PayloadAction<keychain.BIOMETRY_TYPE | null>) => {
             state.isCompatible = action.payload;
         },
-        updaetAccessStorage: (state, action: PayloadAction<boolean>) => {
-            state.isAccessStorage = action.payload;
-        }
     },
     extraReducers: (builder) => {
         builder
@@ -116,7 +112,6 @@ export const {
     updateFE,
     updateSaved,
     updateisCompatible,
-    updaetAccessStorage
 } = appSlice.actions;
 export const app = (state: RootState) => state.app;
 export default appSlice.reducer;

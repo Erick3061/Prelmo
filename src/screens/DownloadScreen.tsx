@@ -22,7 +22,7 @@ export const DownloadScreen = ({ navigation }: Props) => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [selected, setSelected] = useState<RNFS.ReadDirItem>();
     const [files, setFiles] = useState<Array<RNFS.ReadDirItem>>();
-    const { theme: { colors, roundness }, isAccessStorage } = useAppSelector(state => state.app);
+    const { theme: { colors, roundness } } = useAppSelector(state => state.app);
     const { handleError, directory } = useContext(HandleContext);
     const { notification } = useContext(AlertContext);
     const focus = navigation.isFocused();
@@ -102,7 +102,7 @@ export const DownloadScreen = ({ navigation }: Props) => {
                                     text: 'Actualizar',
                                     icon: 'refresh',
                                     onPress() {
-                                        isAccessStorage && Read();
+                                        Read();
                                     },
                                     contentStyle: { ...styles.btnMenu }
                                 },
@@ -115,10 +115,12 @@ export const DownloadScreen = ({ navigation }: Props) => {
     }, [navigation]);
 
     useEffect(() => {
-        isAccessStorage && Read();
+        Read();
     }, [focus]);
 
-    // uses
+    useEffect(() => {
+        Read();
+    }, []);
 
     return (
         <View style={{ flex: 1, padding: 5 }}>

@@ -7,7 +7,7 @@ import { Orientation, Key, Events } from '../interfaces/interfaces';
 import { Row, TableRow } from '../components/table/Row';
 import { ListRenderItemInfo } from 'react-native';
 import Text from '../components/Text';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 interface Props extends NativeStackScreenProps<rootStackScreen, 'TableScreen'> { };
 export const TableScreen = ({ navigation, route: { params: { events, keys, name, address, report } } }: Props) => {
@@ -21,7 +21,7 @@ export const TableScreen = ({ navigation, route: { params: { events, keys, name,
 
     const renderItem = useCallback(({ index, item, separators }: ListRenderItemInfo<Events>) => {
         return (
-            <Animated.View entering={FadeIn}>
+            <Animated.View entering={FadeInDown}>
                 <TableRow
                     data={item}
                     titles={keys as Key<Events>[]}

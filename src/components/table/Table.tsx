@@ -1,11 +1,12 @@
-import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import React, { useCallback } from 'react';
+import { FlatList, ListRenderItemInfo, ScrollView, StyleSheet, View } from 'react-native';
 import { Row, TableRow } from './Row';
 import { stylesApp } from '../../App';
-import { Key, Orientation } from '../../interfaces/interfaces';
+import { Events, Key, Orientation } from '../../interfaces/interfaces';
 import { useAppSelector } from '../../app/hooks';
 import Color from 'color';
 import Text from '../Text';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 
 type Props<T> = {
@@ -62,6 +63,20 @@ const Table = <T extends Object>({ Header, Data, titles, isShowHeader = true, sh
         return <Text style={{ textAlign: 'center', width: 100, color: colors.text }}>Sin Eventos</Text>;
     }, [Data, colors, showIndices])
 
+    const renderItem = useCallback(({ index, item, separators }: ListRenderItemInfo<any>) => {
+        return (
+            <Animated.View entering={FadeInDown}>
+                <TableRow
+                    data={item}
+                    titles={titles}
+                    style={{ borderBottomColor: colors.backdrop, borderBottomWidth: 1 }}
+                    indice={showIndices ? index + 1 : undefined}
+                />
+            </Animated.View>
+        )
+    }, [Data, titles, showIndices])
+
+
     return (
         <View style={[styles.container, {
             backgroundColor,
@@ -73,6 +88,16 @@ const Table = <T extends Object>({ Header, Data, titles, isShowHeader = true, sh
             <ScrollView horizontal={true}>
                 <View>
                     {_renderTH()}
+                    {/* <FlatList
+                        data={Data}
+                        renderItem={renderItem}
+                        keyExtractor={(_, idx) => `${idx}`}
+                        ListEmptyComponent={<Text variant='labelMedium' style={[{ textAlign: 'center' }]}>Sin eventos</Text>}
+                        removeClippedSubviews={true}
+                        maxToRenderPerBatch={10}
+                        updateCellsBatchingPeriod={50}
+                        initialNumToRender={10}
+                    /> */}
                     <ScrollView >
                         {_renderBody()}
                     </ScrollView>

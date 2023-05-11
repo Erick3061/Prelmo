@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useReducer } from "react";
 import { ColorSchemeName, Dimensions, Platform, useColorScheme } from "react-native";
 import { Account, BatteryStatus, GetReport, Group, Orientation, Percentajes, UpdateUserProps, User } from '../interfaces/interfaces';
 import { useAppDispatch } from '../app/hooks';
-import { logOut, setInsets, updateTheme, setScreen, setOrientation, updateState, updateisCompatible, updateFE, setUser, updateSaved, updaetAccessStorage } from '../features/appSlice';
+import { logOut, setInsets, updateTheme, setScreen, setOrientation, updateState, updateisCompatible, updateFE, setUser, updateSaved } from '../features/appSlice';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CombinedDarkTheme, CombinedLightTheme } from "../config/theme/Theme";
 import { EdgeInsets, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -42,7 +42,7 @@ type Action =
 
 const initialState: State = {
     domain: '',
-    directory: (Platform.OS === 'ios' ? RNFS.DocumentDirectoryPath : RNFS.DownloadDirectoryPath),
+    directory: (Platform.OS === 'ios' ? RNFS.DocumentDirectoryPath : RNFS.ExternalCachesDirectoryPath),
     isDownloadDoc: false,
     instance: axios.create(),
 }
@@ -93,43 +93,6 @@ export const HandleProvider = ({ children }: any) => {
         if (Platform.OS === 'ios') {
             if (await check('ios.permission.FACE_ID') !== 'granted') {
                 await request('ios.permission.FACE_ID');
-            }
-            appDispatch(updaetAccessStorage(true));
-        }
-        if (Platform.OS === 'android') {
-            if (Platform.constants.Version < 30) {
-                const req = await checkMultiple([
-                    'android.permission.READ_EXTERNAL_STORAGE',
-                    'android.permission.WRITE_EXTERNAL_STORAGE',
-                    'android.permission.READ_MEDIA_IMAGES',
-                    'android.permission.READ_MEDIA_VIDEO',
-                    'android.permission.READ_MEDIA_AUDIO'
-                ]);
-
-                if (req["android.permission.READ_EXTERNAL_STORAGE"] !== 'granted' || req["android.permission.WRITE_EXTERNAL_STORAGE"] !== 'granted') {
-                    const resp = await requestMultiple([
-                        'android.permission.READ_EXTERNAL_STORAGE',
-                        'android.permission.WRITE_EXTERNAL_STORAGE',
-                        'android.permission.READ_MEDIA_IMAGES',
-                        'android.permission.READ_MEDIA_VIDEO',
-                        'android.permission.READ_MEDIA_AUDIO'
-                    ]);
-                    if (resp["android.permission.READ_EXTERNAL_STORAGE"] === 'granted' && resp["android.permission.WRITE_EXTERNAL_STORAGE"] === 'granted') {
-                        appDispatch(updaetAccessStorage(true));
-                    } else {
-                        appDispatch(updaetAccessStorage(false));
-                        notification({
-                            type: 'warning',
-                            autoClose: false,
-                            title: 'Alerta',
-                            subtitle: 'Los permisos de la aplicación no fueron otorgados',
-                            text: JSON.stringify(resp, null, 3),
-                        })
-                    }
-                }
-            } else {
-                appDispatch(updaetAccessStorage(true));
-
             }
         }
     }

@@ -17,7 +17,6 @@ export interface AppSlice {
     insets?: EdgeInsets;
     accountsSelected: Array<Account>;
     groupsSelected: Array<Group>;
-    isAccessStorage: boolean;
 };
 
 export interface date {
